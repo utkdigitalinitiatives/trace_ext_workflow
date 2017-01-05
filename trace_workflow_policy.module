@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function trace_workflow_policy_menu() {
+  $items = array();
+  $items['islandora/trace_workflow/list'] = array(
+    'title' => 'Submitted Trace Objects',
+    'description' => 'List of Submitted Objects.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('trace_workflow_policy_form'),
+    'access arguments' => array('manage object properties'),
+    'file' => 'includes/trace_workflow_policy_menu.inc',
+  );
+  return $items;
+}

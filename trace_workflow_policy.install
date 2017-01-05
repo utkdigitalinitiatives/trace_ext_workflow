@@ -1,0 +1,64 @@
+ <?php
+
+/**
+ * Implements hook_schema().
+ */
+function trace_workflow_policy_schema() {
+  $schema['trace_workflow_namespace_policies'] = array(
+    'description' => 'Save policies for an entire namespace',
+    'fields' => array(
+      'namespace' => array(
+		'description' => 'key',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'submitted_policy' => array(
+        'description' => 'Primary key is a Fedora PID',
+        'type' => 'text',
+      ),
+      'accepted_policy' => array(
+        'description' => 'How many uses until this should be removed',
+        'type' => 'text',
+      ),
+    ),
+    'unique keys' => array(
+      'unique_namespace_key' => array('namespace'),
+    ),
+    'primary key' => array('namespace'),
+  );
+  $schema['trace_workflow_pids'] = array(
+    'description' => 'Keep track of the pids in the workflow',
+    'fields' => array(
+      'pid' => array(
+		'description' => 'PID of the item that is in a workflow state. Either s (submitted) or a (accepted)',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+		'description' => 'The label of the fedora Object',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'state' => array(
+		'description' => 'key',
+        'type' => 'varchar',
+        'length' => 1,
+        'not null' => TRUE,
+      ),
+      'user' => array(
+		'description' => 'key',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+    ),
+    'unique keys' => array(
+      'unique_pid_key' => array('pid'),
+    ),
+    'primary key' => array('pid'),
+  );
+  return $schema;
+}

@@ -1,0 +1,8 @@
+name = Trace Workflow Policy
+description = "Trace Workflow Policy"
+package = Trace Tools
+version = 7.x-dev
+core = 7.x
+dependencies[] = islandora
+files[] = includes/trace_workflow_policy_dao.inc
+files[] = includes/trace_workflow_policy_menu.inc
