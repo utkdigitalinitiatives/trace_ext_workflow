@@ -73,7 +73,7 @@ function trace_workflow_policy_accept_batch_operation($pids, &$context) {
     // add  a new policy to this pid
     $target_object = islandora_object_load($target_pid);
     if ($target_object) {
-      trace_workflow_policy_rules_object_policy_update($target_object);
+      trace_workflow_policy_object_policy_update($target_object);
     } else {
         watchdog('trace_workflow_policy', 'trace_workflow_policy_accept_batch_operation cannot load object  %p.', array('%p' => $target_object), WATCHDOG_ERROR);
         return;
@@ -117,7 +117,7 @@ function trace_workflow_policy_accept_batch_finished($success, $results, $operat
 /**
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
+function trace_workflow_policy_object_policy_add(AbstractObject $object) {
     // determine the namespace of the object
     $namespace = getNamespaceFromPid($object);                                                                                                         
 
@@ -131,7 +131,7 @@ function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
 /**
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_workflow_policy_rules_object_policy_update(AbstractObject $object) {
+function trace_workflow_policy_object_policy_update(AbstractObject $object) {
     // determine the namespace of the object
 
     $namespace = getNamespaceFromPid($object);

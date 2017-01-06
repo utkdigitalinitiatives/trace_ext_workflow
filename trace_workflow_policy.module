@@ -5,7 +5,7 @@
  */
 function trace_workflow_policy_menu() {
   $items = array();
-  $items['islandora/trace_workflow/list'] = array(
+  $items['trace_workflow_policy/list'] = array(
     'title' => 'Submitted Trace Objects',
     'description' => 'List of Submitted Objects.',
     'page callback' => 'drupal_get_form',
@@ -14,4 +14,12 @@ function trace_workflow_policy_menu() {
     'file' => 'includes/trace_workflow_policy_menu.inc',
   );
   return $items;
+}
+
+/**
+ * Rules action callback; set a POLiCY datastream on an object and return.
+ */
+function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
+    module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+    return trace_workflow_policy_object_policy_add($object);
 }
