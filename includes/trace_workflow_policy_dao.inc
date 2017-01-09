@@ -208,11 +208,12 @@ function trace_workflow_policy_update_policy_datastream($object, $policy_xml) {
 }
 function trace_workflow_policy_insert_submitted_record($object) {
     try {
+        global $user;
         $nid = db_insert('trace_workflow_pids')->fields(array(
                 'pid' => $object->id,
                 'label' => $object->label,
                 'state' => 's',
-                'user' => $user,
+                'user' => $user->name,
             ))->execute();
     } catch (Exception $e) {
         \drupal_set_message(t('Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');

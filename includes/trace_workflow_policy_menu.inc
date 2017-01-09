@@ -41,9 +41,8 @@ function trace_workflow_policy_form($form, $form_state) {
     $submitted_records = trace_workflow_policy_select_submitted_records();
     $rows = array();
     if (! is_null($submitted_records)) {
-        foreach ($submitted_records as $submitted_record) {
-          $pid = $submitted_record['pid'];
-          $rows[$pid] = array(l($submitted_record['label'], "islandora/object/$pid"));
+        foreach ($submitted_records as $submitted_pid => $submitted_label) {
+          $rows[$submitted_pid] = $submitted_label;
         }
     }
     $form['management_table'] = array(
