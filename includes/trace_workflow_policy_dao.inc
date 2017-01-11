@@ -59,6 +59,7 @@ function trace_workflow_policy_accept_create_batch($pids) {
  *   The context of the Drupal batch.
  */
 function trace_workflow_policy_accept_batch_operation($pids, &$context) {
+  module_load_include('inc', 'islandora', 'includes/utilities');
   if (empty($context['sandbox'])) {
     $context['sandbox'] = array();
     $context['sandbox']['progress'] = 0;

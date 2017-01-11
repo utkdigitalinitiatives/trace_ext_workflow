@@ -21,5 +21,6 @@ function trace_workflow_policy_menu() {
  */
 function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
     module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+    module_load_include('inc', 'islandora', 'includes/utilities');
     return trace_workflow_policy_object_policy_add($object);
 }

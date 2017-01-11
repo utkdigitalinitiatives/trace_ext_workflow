@@ -16,8 +16,10 @@
  *   An array containing the form to be rendered.
  */
 function trace_workflow_policy_form($form, $form_state) {
-  module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
-
+    module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+    module_load_include('inc', 'islandora_simple_workflow', 'includes/utilities');
+    module_load_include('inc', 'islandora', 'includes/utilities');
+    
   if (isset($form_state['show_accept'])) {
     $form['confirm_message'] = array(
       '#type' => 'item',
@@ -119,7 +121,7 @@ function trace_workflow_policy_accept(&$form, &$form_state) {
  */
 function trace_workflow_policy_confirm_accept($form, &$form_state) {
   module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
-
+  
   $batch = trace_workflow_policy_accept_create_batch($form_state['pids_to_accept']);
   batch_set($batch);
 }
