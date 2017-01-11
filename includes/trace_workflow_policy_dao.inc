@@ -119,8 +119,9 @@ function trace_workflow_policy_accept_batch_finished($success, $results, $operat
  */
 function trace_workflow_policy_object_policy_add(AbstractObject $object) {
     // determine the namespace of the object
-    $namespace = getNamespaceFromPid($object);                                                                                                         
-
+    $pid = $object->id;
+    $namespace = islandora_get_namespace($pid);
+                                                                                                       
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_workflow_policy_retrieve_namespace_submitted_policy($namespace);
     trace_workflow_policy_insert_submitted_record($object);
@@ -133,8 +134,8 @@ function trace_workflow_policy_object_policy_add(AbstractObject $object) {
  */
 function trace_workflow_policy_object_policy_update(AbstractObject $object) {
     // determine the namespace of the object
-
-    $namespace = getNamespaceFromPid($object);
+    $pid = $object->id;
+    $namespace = islandora_get_namespace($pid);
 
 
     // get the policy from the database that corresponds to the namespace
@@ -231,17 +232,5 @@ function trace_workflow_policy_update_accepted_record($pid) {
     } catch (Exception $e) {
         \drupal_set_message(t('Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
-    }
-}
-
-function getNamespaceFromPid(AbstractObject $object) {
-    $pid = $object->id;
-    $position = strpos($pid, ":");
-    if ($position) {
-        $namespace = substr($pid, 0, $position);
-        return $namespace;
-    } else {
-        watchdog('trace_workflow_policy', 'Failed to extract namespace from PID %p.', array('%p' => $object->id), WATCHDOG_ERROR);
-        return null;
     }
 }
