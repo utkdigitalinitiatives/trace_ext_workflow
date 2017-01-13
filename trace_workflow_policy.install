@@ -8,17 +8,21 @@ function trace_workflow_policy_schema() {
     'description' => 'Save policies for an entire namespace',
     'fields' => array(
       'namespace' => array(
-		'description' => 'key',
+		'description' => 'Namespace to which the policies are applied',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'submitted_policy' => array(
-        'description' => 'Primary key is a Fedora PID',
+        'description' => 'Policy for an initially created item',
         'type' => 'text',
       ),
       'accepted_policy' => array(
-        'description' => 'How many uses until this should be removed',
+        'description' => 'Policy for an item accepted by a manager',
+        'type' => 'text',
+      ),
+      'published_policy' => array(
+        'description' => 'Policy for an item published by a manager',
         'type' => 'text',
       ),
     ),
@@ -43,13 +47,13 @@ function trace_workflow_policy_schema() {
         'not null' => TRUE,
       ),
       'state' => array(
-		'description' => 'key',
+		'description' => 'Either s (submitted) or a (accepted)',
         'type' => 'varchar',
         'length' => 1,
         'not null' => TRUE,
       ),
       'user' => array(
-		'description' => 'key',
+		'description' => 'who changed the record',
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
