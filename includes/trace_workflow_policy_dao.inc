@@ -122,10 +122,19 @@ function trace_workflow_policy_object_policy_add(AbstractObject $object) {
     // determine the namespace of the object
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
-                                                                                                       
+    
+    // check to see if the object needs the additional workflow of
+    // a collection manager accepting a submission
+    // rather than the object going straight to publishing workflow
+    //
+    if (does_islandora_simple_workflow_namespace_need_accept($namespace) == 1) {
+        trace_workflow_policy_insert_submitted_record($object);
+    } else {
+        trace_workflow_policy_insert_accepted_record($object);
+    }
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_workflow_policy_retrieve_namespace_submitted_policy($namespace);
-    trace_workflow_policy_insert_submitted_record($object);
+    
     // add the policy to the object
     return trace_workflow_policy_add_policy_datastream($object, $policy_xml);
 }
@@ -218,10 +227,26 @@ function trace_workflow_policy_insert_submitted_record($object) {
                 'user' => $user->name,
             ))->execute();
     } catch (Exception $e) {
-        \drupal_set_message(t('Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
+        \drupal_set_message(t('Error inserting submitted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
     }
 }
+
+function trace_workflow_policy_insert_accepted_record($object) {
+    try {
+        global $user;
+        $nid = db_insert('trace_workflow_pids')->fields(array(
+                'pid' => $object->id,
+                'label' => $object->label,
+                'state' => 'a',
+                'user' => $user->name,
+            ))->execute();
+    } catch (Exception $e) {
+        \drupal_set_message(t('Error inserting accepted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
+        \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+}
+
 function trace_workflow_policy_update_accepted_record($pid) {
     try {
     db_update('trace_workflow_pids') // Table name no longer needs {}
@@ -231,7 +256,7 @@ function trace_workflow_policy_update_accepted_record($pid) {
       ->condition('pid', $pid)
       ->execute();
     } catch (Exception $e) {
-        \drupal_set_message(t('Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
+        \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
     }
 }
