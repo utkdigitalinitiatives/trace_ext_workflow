@@ -44,7 +44,8 @@ function trace_workflow_policy_form($form, $form_state) {
     $rows = array();
     if (! is_null($submitted_records)) {
         foreach ($submitted_records as $submitted_pid => $submitted_label) {
-          if (can_islandora_simple_workflow_object_read_user_role($submitted_pid)) {
+          if (can_trace_workflow_user_role_access_object($submitted_pid)) {
+            
             $rows[$submitted_pid] = array(l($submitted_label, "islandora/object/$submitted_pid"));
           }
         }

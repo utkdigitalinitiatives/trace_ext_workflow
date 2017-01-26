@@ -24,3 +24,33 @@ function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
     module_load_include('inc', 'islandora', 'includes/utilities');
     return trace_workflow_policy_object_policy_add($object);
 }
+
+/**
+ * 
+ * Implements workflow_manage_objects alter hook from islandora_simple_workflow.
+ * workflow_manage_objects filters  the list of objects to be viewed in 
+ * the workflow publication screen
+ * 
+ */
+function trace_workflow_policy_workflow_manage_objects_alter(&$prev_inactive_objects) {
+    $filtered_inactive_objects = array();
+    while (sizeof($prev_inactive_objects) > 0) {
+        $inactive_object = array_pop($prev_inactive_objects);
+        $pid = $inactive_object['object']['value'];
+        if (is_trace_workflow_object_accepted($pid) && can_trace_workflow_user_role_access_object($pid)) {
+
+            push($inactive_object, $filtered_inactive_objects);
+        }
+    }
+    array_merge($prev_inactive_objects, $filtered_inactive_objects);
+}
+
+/**
+ * 
+ * Implements workflow_extend_policy alter hook
+ * Applies a new policy on the object if the object is in a particular state
+ * 
+ */
+function trace_workflow_policy_workflow_extend_policy_alter(&$target_object) {
+    trace_workflow_policy_object_update($target_object);
+}

@@ -116,30 +116,30 @@ function trace_workflow_policy_accept_batch_finished($success, $results, $operat
 
 
 /**
+ * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
 function trace_workflow_policy_object_policy_add(AbstractObject $object) {
     // determine the namespace of the object
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
-    
     // check to see if the object needs the additional workflow of
     // a collection manager accepting a submission
     // rather than the object going straight to publishing workflow
     //
-    if (does_islandora_simple_workflow_namespace_need_accept($namespace) == 1) {
-        trace_workflow_policy_insert_submitted_record($object);
-    } else {
-        trace_workflow_policy_insert_accepted_record($object);
-    }
-    // get the policy from the database that corresponds to the namespace
+    trace_workflow_policy_insert_submitted_record($object);
     $policy_xml = trace_workflow_policy_retrieve_namespace_submitted_policy($namespace);
-    
+    if ($policy_xml) {
+    // get the policy from the database that corresponds to the namespace
     // add the policy to the object
-    return trace_workflow_policy_add_policy_datastream($object, $policy_xml);
+        return trace_workflow_policy_add_policy_datastream($object, $policy_xml);
+    } else {
+        return NULL;
+    }
 }
 
 /**
+ * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
 function trace_workflow_policy_object_policy_update(AbstractObject $object) {
@@ -154,6 +154,10 @@ function trace_workflow_policy_object_policy_update(AbstractObject $object) {
     
     return trace_workflow_policy_update_policy_datastream($object, $policy_xml);
 }
+
+/*
+ * Y
+ */
 function trace_workflow_policy_retrieve_namespace_submitted_policy($namespace) {
 
     // get the policy from the database that corresponds to the namespace
@@ -169,10 +173,13 @@ function trace_workflow_policy_retrieve_namespace_submitted_policy($namespace) {
         $result = $query->fetchObject();
         return $result->submitted_policy;
     } else {
-        watchdog('trace_workflow_policy', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_ERROR);
+        watchdog('trace_workflow_policy', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_INFO);
         return FALSE;
     }
 }
+/*
+ * Y
+ */
 function trace_workflow_policy_retrieve_namespace_accepted_policy($namespace) {
 
     // get the policy from the database that corresponds to the namespace
@@ -192,6 +199,10 @@ function trace_workflow_policy_retrieve_namespace_accepted_policy($namespace) {
         return FALSE;
     }
 }
+
+/*
+ * Y
+ */
 function trace_workflow_policy_add_policy_datastream($object, $policy_xml) {
     $datastream = $object->getDatastream('POLICY');
     if (empty($datastream)) {
@@ -210,6 +221,9 @@ function trace_workflow_policy_add_policy_datastream($object, $policy_xml) {
     }
     return $datastream;
 }
+/*
+ * Y
+ */
 function trace_workflow_policy_update_policy_datastream($object, $policy_xml) {
     $pid = $object->id;
     $repository = $object->repository;
@@ -217,6 +231,9 @@ function trace_workflow_policy_update_policy_datastream($object, $policy_xml) {
     return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
 
 }
+/*
+ * Y
+ */
 function trace_workflow_policy_insert_submitted_record($object) {
     try {
         global $user;
@@ -232,21 +249,9 @@ function trace_workflow_policy_insert_submitted_record($object) {
     }
 }
 
-function trace_workflow_policy_insert_accepted_record($object) {
-    try {
-        global $user;
-        $nid = db_insert('trace_workflow_pids')->fields(array(
-                'pid' => $object->id,
-                'label' => $object->label,
-                'state' => 'a',
-                'user' => $user->name,
-            ))->execute();
-    } catch (Exception $e) {
-        \drupal_set_message(t('Error inserting accepted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
-        \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
-    }
-}
-
+/*
+ * Y
+ */
 function trace_workflow_policy_update_accepted_record($pid) {
     try {
     db_update('trace_workflow_pids') // Table name no longer needs {}
@@ -259,4 +264,94 @@ function trace_workflow_policy_update_accepted_record($pid) {
         \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_workflow_policy', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
     }
+}
+
+/*
+ * Y
+ */
+function is_trace_workflow_object_accepted($pid) {
+    $db_and = db_and();
+    $db_and->condition('w.state', 'a');
+    $db_and->condition('w.pid', $pid);
+    $query = db_select('trace_workflow_pids', 'w')
+        ->fields('w', array('pid'))
+        ->condition($db_and)
+        ->execute();
+
+    $num = $query->rowCount();
+    if ($num > 0) {
+        return TRUE;
+    } 
+    return FALSE;
+
+}
+/*
+ * Y
+ */
+function can_trace_workflow_user_role_access_object($pid) {
+    global $user;
+    $user_roles_array = array_keys($user->roles);
+    $namespace = islandora_get_namespace($pid);
+    $query = db_select('trace_workflow_namespace_role', 'iwnr');
+    $db_or = db_or();
+    $db_or->condition('iwnr.namespace', $namespace);
+    $db_or->condition('iwnr.namespace', 'ALL');
+    $db_and = db_and();
+    $db_and->condition('iwnr.rid', $user_roles_array, 'IN');
+    $db_and->condition($db_or);
+    $query->condition($db_and);
+    $query->addExpression('COUNT(iwnr.namespace)', 'namespace_count');
+    $query->groupBy('iwnr.namespace');
+    $results = $query->execute();
+    $num = $results->rowCount();
+    if ($num > 0) {
+        $namespace_count_record = $results->fetchObject();
+        if ($namespace_count_record && ($namespace_count_record->namespace_count > 0)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+/*
+ * Y
+ */
+function trace_workflow_policy_retrieve_namespace_published_policy($namespace) {
+
+    // get the policy from the database that corresponds to the namespace
+
+    $query = db_select('trace_workflow_namespace_policies', 't')
+        ->fields('t', array('published_policy'))
+        ->condition('t.namespace', $namespace)
+        ->range(0, 1)
+        ->execute();
+
+    $num = $query->rowCount();
+    if ($num > 0) {
+        $result = $query->fetchObject();
+        return $result->published_policy;
+    } else {
+        watchdog('islandora_simple_workflow', 'islandora_simple_workflow_retrieve_namespace_published_policy does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_ERROR);
+        return FALSE;
+    }
+}
+
+
+/**
+ * Y
+ * Rules action callback; set a POLiCY datastream on an object and return.
+ */
+function trace_workflow_policy_object_update(AbstractObject $object) {
+    // determine the namespace of the object
+    $pid = $object->id;
+    $namespace = islandora_get_namespace($pid);
+
+
+    // get the policy from the database that corresponds to the namespace
+    $policy_xml = trace_workflow_policy_retrieve_namespace_published_policy($namespace);
+    // add the policy to the object
+    
+    $repository = $object->repository;
+
+    return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
+
 }

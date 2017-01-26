@@ -64,5 +64,25 @@ function trace_workflow_policy_schema() {
     ),
     'primary key' => array('pid'),
   );
+  
+  $schema['trace_workflow_namespace_role'] = array(
+    'description' => 'For a namespace, roles may approve objects',
+    'fields' => array(
+      'namespace' => array(
+		'description' => 'namespace that is associated with a role id',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'rid' => array(
+        'description' => 'Role Id from the role table that may approve/publish objects in namespace',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE, 
+      ),
+    ),
+  );
+
+
   return $schema;
 }
