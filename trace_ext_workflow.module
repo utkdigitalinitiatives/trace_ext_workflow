@@ -44,7 +44,7 @@ function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_object
             array_push($filtered_inactive_objects, $inactive_object);
         }
     }
-    array_merge($prev_inactive_objects, $filtered_inactive_objects);
+    $prev_inactive_objects =  $filtered_inactive_objects;
 }
 
 /**
