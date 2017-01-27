@@ -33,13 +33,15 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
  * 
  */
 function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_objects) {
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
+
     $filtered_inactive_objects = array();
     while (sizeof($prev_inactive_objects) > 0) {
         $inactive_object = array_pop($prev_inactive_objects);
         $pid = $inactive_object['object']['value'];
         if (is_trace_workflow_object_accepted($pid) && can_trace_workflow_user_role_access_object($pid)) {
-
-            push($inactive_object, $filtered_inactive_objects);
+            array_push($filtered_inactive_objects, $inactive_object);
         }
     }
     array_merge($prev_inactive_objects, $filtered_inactive_objects);
