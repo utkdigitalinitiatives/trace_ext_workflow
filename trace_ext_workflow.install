@@ -3,7 +3,7 @@
 /**
  * Implements hook_schema().
  */
-function trace_workflow_policy_schema() {
+function trace_ext_workflow_schema() {
   $schema['trace_workflow_namespace_policies'] = array(
     'description' => 'Save policies for an entire namespace',
     'fields' => array(

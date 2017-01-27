@@ -3,10 +3,10 @@
 /**
  * Implements hook_rules_action_info().
  */
-function trace_workflow_policy_rules_action_info() {
+function trace_ext_workflow_rules_action_info() {
     $rules = array();
 
-    $rules['trace_workflow_policy_rules_object_policy_add'] = array(
+    $rules['trace_ext_workflow_rules_object_policy_add'] = array(
         'label' => t('Add a Policy datastream on an object.'),
         'group' => t('TRACE'),
         'parameter' => array(

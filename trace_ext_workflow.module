@@ -3,15 +3,15 @@
 /**
  * Implements hook_menu().
  */
-function trace_workflow_policy_menu() {
+function trace_ext_workflow_menu() {
   $items = array();
-  $items['trace_workflow_policy/list'] = array(
+  $items['trace_ext_workflow/list'] = array(
     'title' => 'Submitted Trace Objects',
     'description' => 'List of Submitted Objects.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('trace_workflow_policy_form'),
+    'page arguments' => array('trace_ext_workflow_form'),
     'access arguments' => array('manage object properties'),
-    'file' => 'includes/trace_workflow_policy_menu.inc',
+    'file' => 'includes/trace_ext_workflow_menu.inc',
   );
   return $items;
 }
@@ -19,10 +19,10 @@ function trace_workflow_policy_menu() {
 /**
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
-    module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'islandora', 'includes/utilities');
-    return trace_workflow_policy_object_policy_add($object);
+    return trace_ext_workflow_object_policy_add($object);
 }
 
 /**
@@ -32,7 +32,7 @@ function trace_workflow_policy_rules_object_policy_add(AbstractObject $object) {
  * the workflow publication screen
  * 
  */
-function trace_workflow_policy_workflow_manage_objects_alter(&$prev_inactive_objects) {
+function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_objects) {
     $filtered_inactive_objects = array();
     while (sizeof($prev_inactive_objects) > 0) {
         $inactive_object = array_pop($prev_inactive_objects);
@@ -51,6 +51,6 @@ function trace_workflow_policy_workflow_manage_objects_alter(&$prev_inactive_obj
  * Applies a new policy on the object if the object is in a particular state
  * 
  */
-function trace_workflow_policy_workflow_extend_policy_alter(&$target_object) {
-    trace_workflow_policy_object_update($target_object);
+function trace_ext_workflow_workflow_extend_policy_alter(&$target_object) {
+    trace_ext_workflow_object_update($target_object);
 }

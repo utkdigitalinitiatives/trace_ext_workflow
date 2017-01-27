@@ -1,0 +1,8 @@
+name = Trace Extended Workflow
+description = "Trace Extended Workflow"
+package = Trace Tools
+version = 7.x-dev
+core = 7.x
+dependencies[] = islandora
+files[] = includes/trace_ext_workflow_dao.inc
+files[] = includes/trace_ext_workflow_menu.inc

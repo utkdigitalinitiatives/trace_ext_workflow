@@ -15,8 +15,8 @@
  * @return array
  *   An array containing the form to be rendered.
  */
-function trace_workflow_policy_form($form, $form_state) {
-    module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+function trace_ext_workflow_form($form, $form_state) {
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'islandora_simple_workflow', 'includes/utilities');
     module_load_include('inc', 'islandora', 'includes/utilities');
     
@@ -31,7 +31,7 @@ function trace_workflow_policy_form($form, $form_state) {
       '#type' => 'submit',
       '#value' => t('Confirm'),
       '#weight' => 2,
-      '#submit' => array('trace_workflow_policy_confirm_accept'),
+      '#submit' => array('trace_ext_workflow_confirm_accept'),
     );
     $form['cancel_accept'] = array(
       '#type' => 'submit',
@@ -40,7 +40,7 @@ function trace_workflow_policy_form($form, $form_state) {
     );
   }
   else  {
-    $submitted_records = trace_workflow_policy_select_submitted_records();
+    $submitted_records = trace_ext_workflow_select_submitted_records();
     $rows = array();
     if (! is_null($submitted_records)) {
         foreach ($submitted_records as $submitted_pid => $submitted_label) {
@@ -61,14 +61,14 @@ function trace_workflow_policy_form($form, $form_state) {
       $form['submit_accepted'] = array(
         '#type' => 'submit',
         '#name' => 'trace-workflow-policy-accept-selected',
-        '#validate' => array('trace_workflow_policy_selected_validate'),
-        '#submit' => array('trace_workflow_policy_accept'),
+        '#validate' => array('trace_ext_workflow_selected_validate'),
+        '#submit' => array('trace_ext_workflow_accept'),
         '#value' => t('Accepted Selected'),
       );
       $form['accept_all'] = array(
         '#type' => 'submit',
         '#name' => 'trace-workflow-policy-accept-all',
-        '#submit' => array('trace_workflow_policy_accept'),
+        '#submit' => array('trace_ext_workflow_accept'),
         '#value' => t('Accept All'),
       );
     }
@@ -84,7 +84,7 @@ function trace_workflow_policy_form($form, $form_state) {
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function trace_workflow_policy_selected_validate($form, $form_state) {
+function trace_ext_workflow_selected_validate($form, $form_state) {
   $selected = array_filter($form_state['values']['management_table']);
   if (empty($selected)) {
     form_error($form['management_table'], t('At least one object must be selected to publish!'));
@@ -99,7 +99,7 @@ function trace_workflow_policy_selected_validate($form, $form_state) {
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function trace_workflow_policy_accept(&$form, &$form_state) {
+function trace_ext_workflow_accept(&$form, &$form_state) {
   if ($form_state['triggering_element']['#name'] == 'islandora-simple-workflow-submit-selected') {
     $selected = array_keys(array_filter($form_state['values']['management_table']));
   }
@@ -120,10 +120,10 @@ function trace_workflow_policy_accept(&$form, &$form_state) {
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function trace_workflow_policy_confirm_accept($form, &$form_state) {
-  module_load_include('inc', 'trace_workflow_policy', 'includes/trace_workflow_policy_dao');
+function trace_ext_workflow_confirm_accept($form, &$form_state) {
+  module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
   
-  $batch = trace_workflow_policy_accept_create_batch($form_state['pids_to_accept']);
+  $batch = trace_ext_workflow_accept_create_batch($form_state['pids_to_accept']);
   batch_set($batch);
 }
 
