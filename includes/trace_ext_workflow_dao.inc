@@ -148,7 +148,6 @@ function trace_ext_workflow_object_policy_update(AbstractObject $object) {
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
 
-watchdog('trace_ext_workflow', 'trace_ext_workflow_object_policy_update found %n.', array('%n' =>  $namespace), WATCHDOG_INFO);
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
     // add the policy to the object
@@ -355,7 +354,7 @@ function trace_ext_workflow_object_update(AbstractObject $object) {
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_ext_workflow_retrieve_namespace_published_policy($namespace);
     // add the policy to the object
-    
+    $object['POLICY']->content = $policy_xml;
     $repository = $object->repository;
     
 
