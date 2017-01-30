@@ -229,11 +229,7 @@ function trace_ext_workflow_add_policy_datastream($object, $policy_xml) {
  * Y
  */
 function trace_ext_workflow_update_policy_datastream($object, $policy_xml) {
-    $pid = $object->id;
-    $repository = $object->repository;
-
-    //IslandoraFedoraApiM
-    return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
+    $object['POLICY']->content = $policy_xml;
 
 }
 /*
@@ -355,9 +351,5 @@ function trace_ext_workflow_object_update(AbstractObject $object) {
     $policy_xml = trace_ext_workflow_retrieve_namespace_published_policy($namespace);
     // add the policy to the object
     $object['POLICY']->content = $policy_xml;
-    $repository = $object->repository;
-    
-
-    return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
 
 }
