@@ -28,12 +28,12 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 
 /**
  * 
- * Implements workflow_manage_objects alter hook from islandora_simple_workflow.
+ * Implements simple_workflow_filter_select alter hook from islandora_simple_workflow.
  * workflow_manage_objects filters  the list of objects to be viewed in 
  * the workflow publication screen
  * 
  */
-function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_objects) {
+function trace_ext_workflow_simple_workflow_filter_select_alter(&$prev_inactive_objects) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
@@ -50,11 +50,11 @@ function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_object
 
 /**
  * 
- * Implements workflow_extend_policy alter hook
+ * Implements simple_workflow_extend_batch alter hook
  * Applies a new policy on the object if the object is in a particular state
  * 
  */
-function trace_ext_workflow_workflow_extend_policy_alter(&$target_object) {
+function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'islandora', 'includes/utilities');
 
