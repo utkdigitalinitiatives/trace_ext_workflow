@@ -21,6 +21,7 @@ function trace_ext_workflow_menu() {
  */
 function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
     return trace_ext_workflow_object_policy_add($object);
 }
@@ -35,7 +36,7 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_objects) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
-
+    module_load_include('inc', 'islandora', 'includes/utilities');
     $filtered_inactive_objects = array();
     while (sizeof($prev_inactive_objects) > 0) {
         $inactive_object = array_pop($prev_inactive_objects);
@@ -54,5 +55,8 @@ function trace_ext_workflow_workflow_manage_objects_alter(&$prev_inactive_object
  * 
  */
 function trace_ext_workflow_workflow_extend_policy_alter(&$target_object) {
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+    module_load_include('inc', 'islandora', 'includes/utilities');
+
     trace_ext_workflow_object_update($target_object);
 }

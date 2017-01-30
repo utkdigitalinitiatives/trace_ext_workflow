@@ -120,6 +120,7 @@ function trace_ext_workflow_accept_batch_finished($success, $results, $operation
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
 function trace_ext_workflow_object_policy_add(AbstractObject $object) {
+    // XXX failure here somwhere?
     // determine the namespace of the object
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
@@ -147,12 +148,16 @@ function trace_ext_workflow_object_policy_update(AbstractObject $object) {
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
 
-
+watchdog('trace_ext_workflow', 'trace_ext_workflow_object_policy_update found %n.', array('%n' =>  $namespace), WATCHDOG_INFO);
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
     // add the policy to the object
-    
+    if ($policy_xml) {
     return trace_ext_workflow_update_policy_datastream($object, $policy_xml);
+    } else {
+        return NULL;
+    }
+    
 }
 
 /*
@@ -228,6 +233,7 @@ function trace_ext_workflow_update_policy_datastream($object, $policy_xml) {
     $pid = $object->id;
     $repository = $object->repository;
 
+    //IslandoraFedoraApiM
     return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
 
 }
@@ -351,6 +357,7 @@ function trace_ext_workflow_object_update(AbstractObject $object) {
     // add the policy to the object
     
     $repository = $object->repository;
+    
 
     return $repository->api->m->modifyDatastream($pid, 'POLICY', array('dsString' => $policy_xml));
 
