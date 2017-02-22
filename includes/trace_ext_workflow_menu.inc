@@ -43,16 +43,15 @@ function trace_ext_workflow_form($form, $form_state) {
     $submitted_records = trace_ext_workflow_select_submitted_records();
     $rows = array();
     if (! is_null($submitted_records)) {
-        foreach ($submitted_records as $submitted_pid => $submitted_label) {
+        foreach ($submitted_records as $submitted_pid => $submitted_row) {
           if (can_trace_workflow_user_role_access_object($submitted_pid)) {
-            
-            $rows[$submitted_pid] = array(l($submitted_label, "islandora/object/$submitted_pid"));
+            $rows[$submitted_pid] = array(l($submitted_row['label'], "islandora/object/$submitted_pid"), l($submitted_row['user'], "users/" . $submitted_row['user']));
           }
         }
     }
     $form['management_table'] = array(
       '#type' => 'tableselect',
-      '#header' => array(t('Object')),
+      '#header' => array(t('Object'), t('Owner')),
       '#options' => $rows,
       '#attributes' => array(),
       '#empty' => t('No submitted objects were found.'),
