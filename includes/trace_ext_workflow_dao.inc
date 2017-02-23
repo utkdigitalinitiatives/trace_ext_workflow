@@ -6,13 +6,13 @@ function trace_ext_workflow_select_submitted_records() {
         
 
     $query = db_select('trace_workflow_pids', 'w')
-        ->fields('w', array('pid', 'label'))
+        ->fields('w', array('pid', 'label', 'user'))
         ->condition('w.state', 's')
         ->execute();
 
     $num = $query->rowCount();
     if ($num > 0) {
-        $results = $query->fetchAllKeyed();
+        $results = $query->fetchAllAssoc('pid', PDO::FETCH_ASSOC);
         return $results;
     } else {
         return NULL;
