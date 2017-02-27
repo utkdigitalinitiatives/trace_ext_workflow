@@ -27,6 +27,18 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 }
 
 /**
+ * Rules action callback; set a POLiCY datastream on an object and return.
+ */
+function trace_ext_workflow_rules_suppl_ds_update($object) {
+    watchdog('trace_ext_workflow', '<pre>@print_r</pre>', array('@print_r' => print_r( $object, TRUE)), WATCHDOG_INFO);
+//    watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_INFO);
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
+    module_load_include('inc', 'islandora', 'includes/utilities');
+    return $object;
+}
+
+/**
  * 
  * Implements simple_workflow_filter_select alter hook from islandora_simple_workflow.
  * workflow_manage_objects filters  the list of objects to be viewed in 
