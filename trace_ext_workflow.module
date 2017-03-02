@@ -27,15 +27,26 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 }
 
 /**
- * Rules action callback; set a POLiCY datastream on an object and return.
+ * Rules action callback; Confirm that the label of the DS does not change
  */
-function trace_ext_workflow_rules_suppl_ds_update($object) {
-    watchdog('trace_ext_workflow', '<pre>@print_r</pre>', array('@print_r' => print_r( $object, TRUE)), WATCHDOG_INFO);
-//    watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_INFO);
+function trace_ext_workflow_rules_suppl_ds_update(IslandoraFedoraDatastream $datastream) {
+    watchdog('trace_ext_workflow', '<pre>@print_r</pre>', array('@print_r' => print_r( $datastream, TRUE)), WATCHDOG_INFO);
+    $getDSHistory = function (IslandoraFedoraDatastream  $datastream) { return $datastream->datastreamHistory; };
+
+    $getDSHistory = Closure::bind($getDSHistory, null, $datastream);
+    $dsHistoryArray = $getDSHistory( $datastream);
+    $countDS = $datastream->count();
+    $origin_label = $dsHistoryArray[$countDS -1]['dsLabel'];
+    $new_label = $dsHistoryArray[0]['dsLabel'];
+    if ($origin_label != $new_label) {
+        $datastream->label = $origin_label;
+        watchdog('trace_ext_workflow', '<pre>@label1 @label2</pre>', array('@label1' => $origin_label, '@label2' => $new_label ), WATCHDOG_INFO);
+    }
+
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
-    return $object;
+    return $datastream;
 }
 
 /**
