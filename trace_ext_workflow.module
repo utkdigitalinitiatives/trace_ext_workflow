@@ -39,7 +39,7 @@ function trace_ext_workflow_rules_suppl_ds_update(IslandoraFedoraDatastream $dat
     $origin_label = $dsHistoryArray[$countDS -1]['dsLabel'];
     $new_label = $dsHistoryArray[0]['dsLabel'];
     if ($origin_label != $new_label) {
-        $datastream->label = $origin_label;
+        $datastream->label = $new_label;
         watchdog('trace_ext_workflow', '<pre>@label1 @label2</pre>', array('@label1' => $origin_label, '@label2' => $new_label ), WATCHDOG_INFO);
     }
 
