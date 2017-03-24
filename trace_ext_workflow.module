@@ -27,6 +27,21 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 }
 
 /**
+ * Rules action callback; Confirm that the label of the DS does change during an update
+ */
+function trace_ext_workflow_rules_suppl_ds_update(IslandoraFedoraDatastream $datastream) {
+
+    $new_label = $_FILES['files']['name']['file'];
+    // The problem this resolves appears in the islandora module that original label is
+    // always kept after ingestion. a new label is never applied upon update
+    if ( preg_match('/^SUPPL.+$/',$datastream->id) == 1) {
+        $datastream->label = $new_label;
+    }
+
+
+    return $datastream;
+}
+/**
  * 
  * Implements simple_workflow_filter_select alter hook from islandora_simple_workflow.
  * workflow_manage_objects filters  the list of objects to be viewed in 
@@ -60,3 +75,71 @@ function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object) 
 
     trace_ext_workflow_object_update($target_object);
 }
+
+/**
+ * Implements the hook form_alter for the islandora_datastream_version_replace_form
+ * The replace form needs a new submit procedure that will update the datastream and label at the  same time
+ * to avoid generating multiple datastream versions for an update
+ *
+ *  @param array $form: Nested array of form elements that comprise the form.
+ *  @param array $form_state: A keyed array containing the current state of the form. The arguments that drupal_get_form() was originally called with are available in the array $form_state['build_info']['args'].
+ *  @param string $form_id: String representing the name of the form itself. Typically this is the name of the function that generated the form.
+ */
+function trace_ext_workflow_form_alter(&$form, &$form_state, $form_id)
+{
+
+    if ($form_id == 'islandora_datastream_version_replace_form') {
+
+        if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit']))) {
+            $form['#submit'] = array();
+            $form['#submit'][] = 'trace_ext_workflow_islandora_datastream_version_replace_form_submit';
+        }
+    }
+}
+
+
+/**
+ * Submit handler for the replace datastream form.
+ *
+ * Adds a new datastream version as latest.
+ *
+ * @param array $form
+ *   The Drupal form.
+ * @param array $form_state
+ *   The Drupal form state.
+ */
+function trace_ext_workflow_islandora_datastream_version_replace_form_submit($form, &$form_state) {
+    $object = islandora_object_load($form_state['object_id']);
+    $form_state['redirect'] = "islandora/object/{$object->id}";
+    $file = file_load($form_state['values']['file']);
+    try {
+        $ds = $object[$form_state['dsid']];
+        if ($ds->mimetype != $file->filemime) {
+            $ds->mimetype = $file->filemime;
+        }
+        $path = drupal_realpath($file->uri);
+        if ($ds->controlGroup == 'E' || $ds->controlGroup == 'R') {
+            trigger_error("Function cannot be called on a {$this->controlGroup} datastream. Please use datastream->url.", E_USER_WARNING);
+            return;
+        }
+        $modifyDatastreamArgs = array('dsFile' => $path, 'dsLabel' => $file->filename, 'lastModifiedDate' => (string) $ds->createdDate);
+        $object->repository->api->m->modifyDatastream($object->id, $ds->id, $modifyDatastreamArgs);
+  //      $object->modifyDatastream($modifyDatastreamArgs );
+        file_delete($file);
+    }
+    catch (exception $e) {
+        drupal_set_message(t('An error occurred during datastream updates. See watchlog for more information.'), 'error');
+        watchdog('islandora',
+            'Failed to add new versionable datastream.<br/>code: @code<br/>message: @msg',
+            array(
+                '@code' => $e->getCode(),
+                '@msg' => $e->getMessage(),
+            ),
+            WATCHDOG_ERROR
+        );
+        file_delete($file);
+        return;
+    }
+    drupal_set_message(t("Successfully Replaced"));
+}
+
