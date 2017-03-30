@@ -99,7 +99,7 @@ function trace_ext_workflow_selected_validate($form, $form_state) {
  *   An array containing the Drupal form state.
  */
 function trace_ext_workflow_accept(&$form, &$form_state) {
-  if ($form_state['triggering_element']['#name'] == 'islandora-simple-workflow-submit-selected') {
+  if ($form_state['triggering_element']['#name'] == 'trace-workflow-policy-accept-selected') {
     $selected = array_keys(array_filter($form_state['values']['management_table']));
   }
   else {
