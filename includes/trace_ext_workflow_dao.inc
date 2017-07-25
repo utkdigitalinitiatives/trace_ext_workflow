@@ -137,7 +137,7 @@ function trace_ext_workflow_accept_batch_finished($success, $results, $operation
  * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_object_policy_add(AbstractObject $object)
+function trace_ext_workflow_object_policy_add($object)
 {
     // XXX failure here somwhere?
     // determine the namespace of the object
@@ -162,7 +162,7 @@ function trace_ext_workflow_object_policy_add(AbstractObject $object)
  * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_object_policy_update(AbstractObject $object)
+function trace_ext_workflow_object_policy_update($object)
 {
     // determine the namespace of the object
     $pid = $object->id;
@@ -375,7 +375,7 @@ function trace_ext_workflow_retrieve_namespace_published_policy($namespace)
  * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_object_update(AbstractObject $object)
+function trace_ext_workflow_object_update($object)
 {
     // determine the namespace of the object
     $pid = $object->id;

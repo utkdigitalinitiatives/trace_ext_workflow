@@ -19,7 +19,7 @@ function trace_ext_workflow_menu() {
 /**
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
+function trace_ext_workflow_rules_object_policy_add($object) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
@@ -29,7 +29,7 @@ function trace_ext_workflow_rules_object_policy_add(AbstractObject $object) {
 /**
  * Rules action callback; Confirm that the label of the DS does change during an update
  */
-function trace_ext_workflow_rules_suppl_ds_update(IslandoraFedoraDatastream $datastream) {
+function trace_ext_workflow_rules_suppl_ds_update($datastream) {
 
     $new_label = $_FILES['files']['name']['file'];
     // The problem this resolves appears in the islandora module that original label is
