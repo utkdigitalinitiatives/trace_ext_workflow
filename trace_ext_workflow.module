@@ -3,9 +3,10 @@
 /**
  * Implements hook_menu().
  */
-function trace_ext_workflow_menu() {
-  $items = array();
-  $items['trace_ext_workflow/list'] = array(
+function trace_ext_workflow_menu()
+{
+    $items = array();
+    $items['trace_ext_workflow/list'] = array(
     'title' => 'Submitted Trace Objects',
     'description' => 'List of Submitted Objects.',
     'page callback' => 'drupal_get_form',
@@ -13,13 +14,14 @@ function trace_ext_workflow_menu() {
     'access arguments' => array('manage object properties'),
     'file' => 'includes/trace_ext_workflow_menu.inc',
   );
-  return $items;
+    return $items;
 }
 
 /**
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_rules_object_policy_add($object) {
+function trace_ext_workflow_rules_object_policy_add($object)
+{
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
@@ -29,12 +31,12 @@ function trace_ext_workflow_rules_object_policy_add($object) {
 /**
  * Rules action callback; Confirm that the label of the DS does change during an update
  */
-function trace_ext_workflow_rules_suppl_ds_update($datastream) {
-
+function trace_ext_workflow_rules_suppl_ds_update($datastream)
+{
     $new_label = $_FILES['files']['name']['file'];
     // The problem this resolves appears in the islandora module that original label is
     // always kept after ingestion. a new label is never applied upon update
-    if ( preg_match('/^SUPPL.+$/',$datastream->id) == 1) {
+    if (preg_match('/^SUPPL.+$/', $datastream->id) == 1) {
         $datastream->label = $new_label;
     }
 
@@ -42,13 +44,14 @@ function trace_ext_workflow_rules_suppl_ds_update($datastream) {
     return $datastream;
 }
 /**
- * 
+ *
  * Implements simple_workflow_filter_select alter hook from islandora_simple_workflow.
- * workflow_manage_objects filters  the list of objects to be viewed in 
+ * workflow_manage_objects filters  the list of objects to be viewed in
  * the workflow publication screen
- * 
+ *
  */
-function trace_ext_workflow_simple_workflow_filter_select_alter(&$prev_inactive_objects) {
+function trace_ext_workflow_simple_workflow_filter_select_alter(&$prev_inactive_objects)
+{
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
     module_load_include('inc', 'islandora', 'includes/utilities');
@@ -64,12 +67,13 @@ function trace_ext_workflow_simple_workflow_filter_select_alter(&$prev_inactive_
 }
 
 /**
- * 
+ *
  * Implements simple_workflow_extend_batch alter hook
  * Applies a new policy on the object if the object is in a particular state
- * 
+ *
  */
-function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object) {
+function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object)
+{
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'islandora', 'includes/utilities');
 
@@ -87,9 +91,7 @@ function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object) 
  */
 function trace_ext_workflow_form_alter(&$form, &$form_state, $form_id)
 {
-
     if ($form_id == 'islandora_datastream_version_replace_form') {
-
         if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit']))) {
             $form['#submit'] = array();
             $form['#submit'][] = 'trace_ext_workflow_islandora_datastream_version_replace_form_submit';
@@ -108,7 +110,8 @@ function trace_ext_workflow_form_alter(&$form, &$form_state, $form_id)
  * @param array $form_state
  *   The Drupal form state.
  */
-function trace_ext_workflow_islandora_datastream_version_replace_form_submit($form, &$form_state) {
+function trace_ext_workflow_islandora_datastream_version_replace_form_submit($form, &$form_state)
+{
     $object = islandora_object_load($form_state['object_id']);
     $form_state['redirect'] = "islandora/object/{$object->id}";
     $file = file_load($form_state['values']['file']);
@@ -124,12 +127,13 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
         }
         $modifyDatastreamArgs = array('dsFile' => $path, 'dsLabel' => $file->filename, 'lastModifiedDate' => (string) $ds->createdDate);
         $object->repository->api->m->modifyDatastream($object->id, $ds->id, $modifyDatastreamArgs);
-  //      $object->modifyDatastream($modifyDatastreamArgs );
+				$ds->setContentFromFile($path);
+        //  $object->modifyDatastream($modifyDatastreamArgs);
         file_delete($file);
-    }
-    catch (exception $e) {
+    } catch (exception $e) {
         drupal_set_message(t('An error occurred during datastream updates. See watchlog for more information.'), 'error');
-        watchdog('islandora',
+        watchdog(
+            'islandora',
             'Failed to add new versionable datastream.<br/>code: @code<br/>message: @msg',
             array(
                 '@code' => $e->getCode(),
@@ -142,4 +146,3 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
     }
     drupal_set_message(t("Successfully Replaced"));
 }
-
