@@ -8,7 +8,7 @@ function trace_ext_workflow_schema() {
     'description' => 'Save policies for an entire namespace',
     'fields' => array(
       'namespace' => array(
-		'description' => 'Namespace to which the policies are applied',
+    'description' => 'Namespace to which the policies are applied',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -35,41 +35,57 @@ function trace_ext_workflow_schema() {
     'description' => 'Keep track of the pids in the workflow',
     'fields' => array(
       'pid' => array(
-		'description' => 'PID of the item that is in a workflow state. Either s (submitted) or a (accepted)',
+        'description' => 'PID of the item that is in a workflow state. Either s (submitted) or a (accepted)',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'label' => array(
-		'description' => 'The label of the fedora Object',
+        'description' => 'The label of the fedora Object',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'state' => array(
-		'description' => 'Either s (submitted) or a (accepted)',
+        'description' => 'Either s (submitted) or a (accepted)',
         'type' => 'varchar',
         'length' => 1,
         'not null' => TRUE,
       ),
       'user' => array(
-		'description' => 'who changed the record',
+        'description' => 'who changed the record',
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
+      ),
+      'date' => array(
+        'description' => 'Last Modified',
+        'type' => 'timestamp',
+        'not null' => TRUE,
+        'default' => 'CURRENT_TIMESTAMP',
+        'attributes' => 'on update CURRENT_TIMESTAMP',
+      ),
+      'datastream' => array(
+        'description' => 'Datastream Modified Date to trigger date',
+        'type' => 'TEXT',
+        'not null' => TRUE,
+        'default' => '',
       ),
     ),
     'unique keys' => array(
       'unique_pid_key' => array('pid'),
     ),
+    'indexes' => array(
+      'modified' => array('modified'),
+    ),
     'primary key' => array('pid'),
   );
-  
+
   $schema['trace_workflow_namespace_role'] = array(
     'description' => 'For a namespace, roles may approve objects',
     'fields' => array(
       'namespace' => array(
-		'description' => 'namespace that is associated with a role id',
+    'description' => 'namespace that is associated with a role id',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -78,7 +94,7 @@ function trace_ext_workflow_schema() {
         'description' => 'Role Id from the role table that may approve/publish objects in namespace',
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE, 
+        'not null' => TRUE,
       ),
     ),
   );

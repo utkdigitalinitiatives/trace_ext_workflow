@@ -19,7 +19,7 @@ function trace_ext_workflow_form($form, $form_state) {
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     module_load_include('inc', 'islandora_simple_workflow', 'includes/utilities');
     module_load_include('inc', 'islandora', 'includes/utilities');
-    
+
   if (isset($form_state['show_accept'])) {
     $form['confirm_message'] = array(
       '#type' => 'item',
@@ -45,13 +45,13 @@ function trace_ext_workflow_form($form, $form_state) {
     if (! is_null($submitted_records)) {
         foreach ($submitted_records as $submitted_pid => $submitted_row) {
           if (can_trace_workflow_user_role_access_object($submitted_pid)) {
-            $rows[$submitted_pid] = array(l($submitted_row['label'], "islandora/object/$submitted_pid"), l($submitted_row['user'], "users/" . $submitted_row['user']));
+            $rows[$submitted_pid] = array(l($submitted_row['label'], "islandora/object/$submitted_pid"), l($submitted_row['user'], "users/" . $submitted_row['user']), $submitted_row['date']);
           }
         }
     }
     $form['management_table'] = array(
       '#type' => 'tableselect',
-      '#header' => array(t('Object'), t('Owner')),
+      '#header' => array(t('Object'), t('Owner'), t('Date Modified')),
       '#options' => $rows,
       '#attributes' => array(),
       '#empty' => t('No submitted objects were found.'),
@@ -121,8 +121,7 @@ function trace_ext_workflow_accept(&$form, &$form_state) {
  */
 function trace_ext_workflow_confirm_accept($form, &$form_state) {
   module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
-  
+
   $batch = trace_ext_workflow_accept_create_batch($form_state['pids_to_accept']);
   batch_set($batch);
 }
-

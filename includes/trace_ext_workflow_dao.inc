@@ -5,10 +5,10 @@ function trace_ext_workflow_select_submitted_records()
     // get the pids from the database table that are still in a state
     // of 's' or submitted
 
-
     $query = db_select('trace_workflow_pids', 'w')
-        ->fields('w', array('pid', 'label', 'user'))
+        ->fields('w', array('pid', 'label', 'user', 'date'))
         ->condition('w.state', 's')
+        ->orderBy('date', 'DESC')
         ->execute();
 
     $num = $query->rowCount();
