@@ -58,17 +58,15 @@ function trace_ext_workflow_schema() {
         'length' => 64,
         'not null' => TRUE,
       ),
-      'date' => array(
-        'description' => 'TODO: please describe this field!',
-        'type' => 'timestamp',
-        'not null' => TRUE,
-        'default' => 'CURRENT_TIMESTAMP',
-        'attributes' => 'on update CURRENT_TIMESTAMP',
+      'modified_date' => array(
+        'description' => 'This is the date and time when this was updated',
+        'type' => 'varchar',
+        'mysql_type' => 'datetime',
         ),
       'datastream' => array(
-        'description' => 'TODO: please describe this field!',
-        'type' => 'text',
-        'not null' => TRUE,
+        'description' => 'Manually assigned time to trigger date update',
+        'type' => 'varchar',
+        'mysql_type' => 'datetime',
       ),
     ),
     'unique keys' => array(
@@ -103,24 +101,20 @@ function trace_ext_workflow_schema() {
 /**
  * Add new columns date and database to trace_workflow_pids.
  */
-function trace_ext_workflow_update_7001() {
+function trace_ext_workflow_update_7002() {
   $table = 'trace_workflow_pids';
 
   $fields = array(
-    'date' => array(
-    'description' => 'TODO: please describe this field!',
-    'type' => 'timestamp',
-    'not null' => TRUE,
-    'default' => 'CURRENT_TIMESTAMP',
-    'attributes' => 'on update CURRENT_TIMESTAMP',
-    ),
-    'datastream'=> array(
-      'description' => 'TODO: please describe this field!',
-      'type' => 'text',
+    'modified_date' => array(
+      'description' => 'This is the date and time when this was updated',
       'type' => 'varchar',
-      'length' => '32',
-      'not null' => FALSE,
-      'default' => '',
+      'mysql_type' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      'not null' => TRUE,
+    ),
+    'datastream' => array(
+      'description' => 'Manually assigned time to trigger date update',
+      'type' => 'varchar',
+      'mysql_type' => 'DATETIME',
     ),
   );
 
@@ -129,4 +123,5 @@ function trace_ext_workflow_update_7001() {
       db_add_field($table, $key, $field);
     }
   }
+  db_query("DELETE FROM {cache};");
 }
