@@ -5,10 +5,10 @@ function trace_ext_workflow_select_submitted_records()
     // get the pids from the database table that are still in a state
     // of 's' or submitted
 
-
     $query = db_select('trace_workflow_pids', 'w')
-        ->fields('w', array('pid', 'label', 'user'))
+        ->fields('w', array('pid', 'label', 'user', 'modified_date'))
         ->condition('w.state', 's')
+        ->orderBy('modified_date', 'DESC')
         ->execute();
 
     $num = $query->rowCount();
@@ -271,6 +271,7 @@ function trace_ext_workflow_insert_submitted_record($object)
             'label' => $object->label,
             'state' => 's',
             'user' => $user->name,
+            'datastream' => date('Y-m-d H:i:s'),
         ))->execute();
     } catch (Exception $e) {
         \drupal_set_message(t('Error inserting submitted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
@@ -287,6 +288,7 @@ function trace_ext_workflow_update_accepted_record($pid)
         db_update('trace_workflow_pids')// Table name no longer needs {}
         ->fields(array(
             'state' => 'a',
+            'datastream' => date('Y-m-d H:i:s'),
         ))
             ->condition('pid', $pid)
             ->execute();
