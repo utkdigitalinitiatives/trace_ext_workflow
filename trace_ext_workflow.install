@@ -8,7 +8,7 @@ function trace_ext_workflow_schema() {
     'description' => 'Save policies for an entire namespace',
     'fields' => array(
       'namespace' => array(
-		'description' => 'Namespace to which the policies are applied',
+    'description' => 'Namespace to which the policies are applied',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -35,41 +35,54 @@ function trace_ext_workflow_schema() {
     'description' => 'Keep track of the pids in the workflow',
     'fields' => array(
       'pid' => array(
-		'description' => 'PID of the item that is in a workflow state. Either s (submitted) or a (accepted)',
+        'description' => 'PID of the item that is in a workflow state. Either s (submitted) or a (accepted)',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'label' => array(
-		'description' => 'The label of the fedora Object',
+        'description' => 'The label of the fedora Object',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'state' => array(
-		'description' => 'Either s (submitted) or a (accepted)',
+        'description' => 'Either s (submitted) or a (accepted)',
         'type' => 'varchar',
         'length' => 1,
         'not null' => TRUE,
       ),
       'user' => array(
-		'description' => 'who changed the record',
+        'description' => 'who changed the record',
         'type' => 'varchar',
         'length' => 64,
         'not null' => TRUE,
+      ),
+      'modified_date' => array(
+        'description' => 'This is the date and time when this was updated',
+        'type' => 'varchar',
+        'mysql_type' => 'datetime',
+        ),
+      'datastream' => array(
+        'description' => 'Manually assigned time to trigger date update',
+        'type' => 'varchar',
+        'mysql_type' => 'datetime',
       ),
     ),
     'unique keys' => array(
       'unique_pid_key' => array('pid'),
     ),
+    'indexes' => array(
+      'modified' => array('modified', 'date'),
+    ),
     'primary key' => array('pid'),
   );
-  
+
   $schema['trace_workflow_namespace_role'] = array(
     'description' => 'For a namespace, roles may approve objects',
     'fields' => array(
       'namespace' => array(
-		'description' => 'namespace that is associated with a role id',
+    'description' => 'namespace that is associated with a role id',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -78,11 +91,37 @@ function trace_ext_workflow_schema() {
         'description' => 'Role Id from the role table that may approve/publish objects in namespace',
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE, 
+        'not null' => TRUE,
       ),
     ),
   );
-
-
   return $schema;
+}
+
+/**
+ * Add new columns date and database to trace_workflow_pids.
+ */
+function trace_ext_workflow_update_7002() {
+  $table = 'trace_workflow_pids';
+
+  $fields = array(
+    'modified_date' => array(
+      'description' => 'This is the date and time when this was updated',
+      'type' => 'varchar',
+      'mysql_type' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      'not null' => TRUE,
+    ),
+    'datastream' => array(
+      'description' => 'Manually assigned time to trigger date update',
+      'type' => 'varchar',
+      'mysql_type' => 'DATETIME',
+    ),
+  );
+
+  foreach ($fields as $key => $field)  {
+    if (!db_field_exists($table, $key)) {
+      db_add_field($table, $key, $field);
+    }
+  }
+  db_query("DELETE FROM {cache};");
 }

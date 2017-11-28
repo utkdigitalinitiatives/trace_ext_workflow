@@ -3,7 +3,8 @@
 /**
  * Implements hook_rules_action_info().
  */
-function trace_ext_workflow_rules_action_info() {
+function trace_ext_workflow_rules_action_info()
+{
     $rules = array();
 
     $rules['trace_ext_workflow_rules_object_policy_add'] = array(
