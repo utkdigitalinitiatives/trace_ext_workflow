@@ -29,6 +29,14 @@ function trace_ext_workflow_rules_object_policy_add($object)
 }
 
 /**
+ * Implimentation of hook_xml_form_builder_datastream_form_alter().
+ */
+function trace_ext_workflow_form_xml_form_builder_datastream_form_alter(&$form, &$form_state, $form_id) {
+  array_unshift($form['update']['#submit'], 'trace_ext_workflow_update_pending_approval');
+}
+
+
+/**
  * Rules action callback; Confirm that the label of the DS does change during an update
  */
 function trace_ext_workflow_rules_suppl_ds_update($datastream)
@@ -39,10 +47,9 @@ function trace_ext_workflow_rules_suppl_ds_update($datastream)
     if (preg_match('/^SUPPL.+$/', $datastream->id) == 1) {
         $datastream->label = $new_label;
     }
-
-
     return $datastream;
 }
+
 /**
  *
  * Implements simple_workflow_filter_select alter hook from islandora_simple_workflow.
@@ -91,23 +98,12 @@ function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object)
  */
 function trace_ext_workflow_form_alter(&$form, &$form_state, $form_id)
 {
-    if ($form_id == 'islandora_datastream_version_replace_form') {
-        if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit']))) {
-            $form['#submit'] = array();
-            $form['#submit'][] = 'trace_ext_workflow_islandora_datastream_version_replace_form_submit';
-        }
-    }
-
-
-
-    if ($form_id == 'xml_form_builder_datastream_form') {
-
-      $object = $form_state['pid'];
-dsm($object);
-      // trace_ext_workflow_update_pending_approval($object, $form_state);
-      $form['#submit'] = array();
-      $form['#submit'][]=trace_ext_workflow_update_pending_approval($object, $form_state);
-    }
+  if ($form_id == 'islandora_datastream_version_replace_form') {
+      if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit']))) {
+          $form['#submit'] = array();
+          $form['#submit'][] = 'trace_ext_workflow_islandora_datastream_version_replace_form_submit';
+      }
+  }
 }
 
 /**
@@ -140,7 +136,7 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
         //  $object->modifyDatastream($modifyDatastreamArgs);
         file_delete($file);
         rules_invoke_event('islandora_datastream_modified', $object, $ds, $ds->id);
-        trace_ext_workflow_update_pending_approval($object->id, $form_state);
+        trace_ext_workflow_update_pending_approval($form, $form_state);
 
     } catch (exception $e) {
         drupal_set_message(t('An error occurred during datastream updates. See watchlog for more information.'), 'error');
@@ -159,17 +155,34 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
     drupal_set_message(t("Successfully Replaced"));
 }
 
-function trace_ext_workflow_update_pending_approval($object, &$form_state)
+
+function trace_ext_workflow_update_pending_approval(&$form, &$form_state)
 {
+if (isset($form_state['input']['titleInfo']['title'])){
   try {
       db_update('trace_workflow_pids')
       ->fields(array(
-          'datastream' => date('Y-m-d H:i:s'),
+        'label' => $form_state['input']['titleInfo']['title'],
+        'datastream' => date('Y-m-d H:i:s'),
       ))
-        ->condition('pid', $object)
+        ->condition('pid', $form_state['pid'])
         ->execute();
   } catch (Exception $e) {
       \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
       \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
   }
+} else {
+    try {
+        db_update('trace_workflow_pids')
+        ->fields(array(
+          'datastream' => date('Y-m-d H:i:s'),
+        ))
+          ->condition('pid', $form_state['object_id'])
+          ->execute();
+    } catch (Exception $e) {
+        \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
+        \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+  }
+
 }
