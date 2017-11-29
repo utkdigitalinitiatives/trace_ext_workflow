@@ -73,9 +73,6 @@ function trace_ext_workflow_schema() {
     'unique keys' => array(
       'unique_pid_key' => array('pid'),
     ),
-    'indexes' => array(
-      'modified' => array('modified', 'date'),
-    ),
     'primary key' => array('pid'),
   );
 
