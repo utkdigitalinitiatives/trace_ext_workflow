@@ -372,13 +372,7 @@ function trace_ext_workflow_retrieve_namespace_published_policy($namespace)
     }
 }
 
-
-/**
- * Y
- * Rules action callback; set a POLiCY datastream on an object and return.
- */
-function trace_ext_workflow_object_update($object)
-{
+function trace_ext_workflow_retrieve_published_policy_xml($object) {
     // determine the namespace of the object
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
@@ -398,12 +392,37 @@ function trace_ext_workflow_object_update($object)
         }
 
     }
+    return $policy_xml;
 
-    // if object is under embargo, apply the embargo stylesheet transforms
+}
+function trace_ext_workflow_accept_policy($target_object) {
+    $target_pid = $target_object->id;
+    // add  a new policy to this pid
+    $policy_xml = null;
+    $embargoed_policy = null;
+    try {
+        $embargoed_policy = new Embargoed_Policy($target_object);
+    } catch (Exception $exception) {
+        $embargoed_policy = null;
+    }
 
+    $namespace = islandora_get_namespace($target_pid);
+    $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
+    if (isset($embargoed_policy) && $embargoed_policy->isPolicyEmbargoed()) {
+        $policy_xml = $embargoed_policy->transformWithEmbargo($policy_xml);
 
+    }
+    return $policy_xml;
+
+}
+/**
+ * Y
+ * Rules action callback; set a POLiCY datastream on an object and return.
+ */
+function trace_ext_workflow_object_update($object)
+{
     // add the policy to the object
-    $object['POLICY']->content = $policy_xml;
+    $object['POLICY']->content = trace_ext_workflow_retrieve_published_policy_xml($object);
 
 }
 
