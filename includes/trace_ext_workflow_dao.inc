@@ -88,14 +88,14 @@ function trace_ext_workflow_accept_batch_operation($pids, &$context)
         }
         if (isset($embargoed_policy)) {
 
-            trace_ext_workflow_object_policy_update($target_object);
+            trace_ext_workflow_accept_object_policy_update($target_object);
             if ($embargoed_policy->isPolicyEmbargoed()) {
                 $xacml_string = $embargoed_policy->transformWithEmbargo($target_object['POLICY']->content);
                 $target_object['POLICY']->content = $xacml_string;
             }
 
         } else {
-            trace_ext_workflow_object_policy_update($target_object);
+            trace_ext_workflow_accept_object_policy_update($target_object);
         }
 
         // this is a poor design, it is costly to run for each pid
@@ -162,7 +162,7 @@ function trace_ext_workflow_object_policy_add($object)
  * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
  */
-function trace_ext_workflow_object_policy_update($object)
+function trace_ext_workflow_accept_object_policy_update($object)
 {
     // determine the namespace of the object
     $pid = $object->id;
@@ -172,7 +172,7 @@ function trace_ext_workflow_object_policy_update($object)
     $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
     // add the policy to the object
     if ($policy_xml) {
-        return trace_ext_workflow_update_policy_datastream($object, $policy_xml);
+        $object['POLICY']->content = $policy_xml;
     } else {
         return NULL;
     }
@@ -285,19 +285,33 @@ function trace_ext_workflow_insert_submitted_record($object)
 function trace_ext_workflow_update_accepted_record($pid)
 {
     try {
-        db_update('trace_workflow_pids')// Table name no longer needs {}
+        $num_updated = db_update('trace_workflow_pids')// Table name no longer needs {}
         ->fields(array(
             'state' => 'a',
             'datastream' => date('Y-m-d H:i:s'),
         ))
             ->condition('pid', $pid)
             ->execute();
+        echo $num_updated . ' trace_workflow_pids have been updated.';
     } catch (Exception $e) {
         \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
     }
 }
-
+/*
+ * Y
+ */
+function trace_ext_workflow_delete_record_from_workflow($pid)
+{
+    try {
+        db_delete('trace_workflow_pids')// Table name no longer needs {}
+            ->condition('pid', $pid)
+            ->execute();
+    } catch (Exception $e) {
+        \drupal_set_message(t('Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
+        \watchdog('trace_ext_workflow', 'Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+}
 /*
  * Y
  */
@@ -377,18 +391,22 @@ function trace_ext_workflow_retrieve_published_policy_xml($object) {
     $pid = $object->id;
     $namespace = islandora_get_namespace($pid);
 
-
+    $embargoed_policy = null;
     // get the policy from the database that corresponds to the namespace
     $policy_xml = trace_ext_workflow_retrieve_namespace_published_policy($namespace);
+
     if (isset($policy_xml)) {
         try {
             $embargoed_policy = new Embargoed_Policy($object);
         } catch (Exception $exception) {
+            watchdog('trace_ext_workflow', 'trace_ext_workflow_retrieve_published_policy_xml cannot parse policies for  %p.', array('%p' => $pid), WATCHDOG_ERROR);
             $embargoed_policy = null;
         }
         if (isset($embargoed_policy) && $embargoed_policy->isPolicyEmbargoed()) {
-
+            echo "policy has embargo!\n";
             $policy_xml = $embargoed_policy->transformWithEmbargo($policy_xml);
+        } else {
+            echo "policy has no embargo!\n";
         }
 
     }
@@ -403,6 +421,7 @@ function trace_ext_workflow_accept_policy($target_object) {
     try {
         $embargoed_policy = new Embargoed_Policy($target_object);
     } catch (Exception $exception) {
+        watchdog('trace_ext_workflow', 'trace_ext_workflow_retrieve_published_policy_xml cannot parse policies for  %p.', array('%p' => $target_pid), WATCHDOG_ERROR);
         $embargoed_policy = null;
     }
 
@@ -463,20 +482,21 @@ class Embargoed_Policy
         }
 
         // the dsids list may be empty if the entire object is being embargoed
-        $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='deny-dsid-mime']/p:Target/p:Resources/p:Resource/p:ResourceMatch/p:ResourceAttributeDesignator[@AttributeId='urn:fedora:names:fedora:2.1:resource:datastream:id']/parent::node()/p:AttributeValue");
+        $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='embargo-dsid-deny']/p:Target/p:Resources/p:Resource/p:ResourceMatch/p:ResourceAttributeDesignator[@AttributeId='urn:fedora:names:fedora:2.1:resource:datastream:id']/parent::node()/p:AttributeValue");
         if ($domNodeList->length == 0) {
-            watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_batch_operation cannot parse dsids from object  %p.', array('%p' => $this->pid), WATCHDOG_INFO);
+            watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_batch_operation cannot parse embargoed dsids from object  %p.', array('%p' => $this->pid), WATCHDOG_INFO);
         } else {
             foreach ($domNodeList as $node) {
                 if (XML_ELEMENT_NODE == $node->nodeType) {
                     $this->reapply_embargo_dsids[] = $node->nodeValue;
                 }
             }
+            var_dump($this->reapply_embargo_dsids);
         }
 
-        $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='deny-dsid-mime']/p:Condition/p:Apply/p:Apply/p:SubjectAttributeDesignator[@AttributeId='urn:fedora:names:fedora:2.1:subject:loginId']/parent::node()/p:Apply/p:AttributeValue");
+        $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='embargo-dsid-deny']/p:Condition/p:Apply/p:Apply/p:SubjectAttributeDesignator[@AttributeId='urn:fedora:names:fedora:2.1:subject:loginId']/parent::node()/p:Apply/p:AttributeValue");
         if ($domNodeList->length == 0) {
-            watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_batch_operation cannot parse users from object  %p.', array('%p' => $this->pid), WATCHDOG_ERROR);
+            watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_batch_operation cannot parse embargoed users from object  %p.', array('%p' => $this->pid), WATCHDOG_ERROR);
             return false;
         } else {
             foreach ($domNodeList as $node) {
@@ -484,7 +504,7 @@ class Embargoed_Policy
                     $this->reapply_embargo_users[] = $node->textContent;
                 }
             }
-
+            var_dump($this->reapply_embargo_users);
         }
         return true;
     }

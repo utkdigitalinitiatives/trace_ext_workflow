@@ -189,12 +189,13 @@ if (isset($form_state['input']['titleInfo']['title'])){
 
 function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ingest_object, $is_object_state_done)
 {
+    echo "trace_ext_workflow_islandora_batch_object_processed\n";
+    module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
     if ($is_object_state_done) {
         if ($is_object_state_done) {
             $key = IslandoraScanBatchObjectDigitalCommons::$BATCH_OBJECT_PREFIX . $ingest_object->id;
             $cached_object = cache_get($key, 'cache_field');
             $islandoraScanBatchObjectDigitalCommons = $cached_object->data;
-            echo "trace_ext_workflow_islandora_batch_object_processed " . $ingest_object->id . " and " . $islandoraScanBatchObjectDigitalCommons->id . "\n";
 
             if (isset($islandoraScanBatchObjectDigitalCommons) && is_a($islandoraScanBatchObjectDigitalCommons, 'IslandoraScanBatchObjectDigitalCommons')) {
                 # determine if the object needs to be embargoed or withdrawn
@@ -206,21 +207,26 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
                 $digital_commons_metadata_domDocument->loadXML($digital_commons_metadata_xml);
                 $digital_commons_metadata_xpath = new DOMXPath($digital_commons_metadata_domDocument);
                 $digital_commons_metadata_published_datestr = $digital_commons_metadata_xpath->evaluate('string(//documents/document/publication-date)');
-                echo "embargo date string {$digital_commons_metadata_published_datestr}\n";
+                echo "published date string {$digital_commons_metadata_published_datestr}\n";
                 $digital_commons_metadata_published_timestamp = strtotime($digital_commons_metadata_published_datestr);
                 if (isset($digital_commons_metadata_published_timestamp)) {
-                    echo "embargo date time {$digital_commons_metadata_published_timestamp}\n";
+                    echo "published date string {$digital_commons_metadata_published_timestamp}\n";
                     if ($digital_commons_metadata_published_timestamp < time()) {
-                        $policy_xml = trace_ext_workflow_retrieve_published_policy_xml($islandoraScanBatchObjectDigitalCommons);
+                        echo "Publish the item\n";
+                        $policy_xml = trace_ext_workflow_retrieve_published_policy_xml($ingest_object);
                         $modifyDatastreamArgs = array('dsString' => $policy_xml);
                         $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
                         $modifyObjectArgs = array('state' => 'A');
                         $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
                         //remove record from database?
+                        trace_ext_workflow_delete_record_from_workflow($islandoraScanBatchObjectDigitalCommons->id);
                     } else {
-                        $policy_xml = trace_ext_workflow_accept_policy($islandoraScanBatchObjectDigitalCommons);
+                        echo "Add item as accepted waiting for publishing\n";
+                        $policy_xml = trace_ext_workflow_accept_policy($ingest_object);
                         $modifyDatastreamArgs = array('dsString' => $policy_xml);
                         $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
+                        $modifyObjectArgs = array('state' => 'I');
+                        $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
                         trace_ext_workflow_update_accepted_record($islandoraScanBatchObjectDigitalCommons->id);
                     }
 
