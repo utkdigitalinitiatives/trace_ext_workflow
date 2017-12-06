@@ -61,19 +61,17 @@ function trace_ext_workflow_schema() {
       'modified_date' => array(
         'description' => 'This is the date and time when this was updated',
         'type' => 'varchar',
-        'mysql_type' => 'datetime',
-        ),
+        'mysql_type' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'not null' => TRUE,
+      ),
       'datastream' => array(
         'description' => 'Manually assigned time to trigger date update',
         'type' => 'varchar',
-        'mysql_type' => 'datetime',
+        'mysql_type' => 'DATETIME',
       ),
     ),
     'unique keys' => array(
       'unique_pid_key' => array('pid'),
-    ),
-    'indexes' => array(
-      'modified' => array('modified', 'date'),
     ),
     'primary key' => array('pid'),
   );
