@@ -292,7 +292,6 @@ function trace_ext_workflow_update_accepted_record($pid)
         ))
             ->condition('pid', $pid)
             ->execute();
-        echo $num_updated . ' trace_workflow_pids have been updated.';
     } catch (Exception $e) {
         \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
         \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
@@ -403,12 +402,8 @@ function trace_ext_workflow_retrieve_published_policy_xml($object) {
             $embargoed_policy = null;
         }
         if (isset($embargoed_policy) && $embargoed_policy->isPolicyEmbargoed()) {
-            echo "policy has embargo!\n";
             $policy_xml = $embargoed_policy->transformWithEmbargo($policy_xml);
-        } else {
-            echo "policy has no embargo!\n";
         }
-
     }
     return $policy_xml;
 
@@ -491,7 +486,6 @@ class Embargoed_Policy
                     $this->reapply_embargo_dsids[] = $node->nodeValue;
                 }
             }
-            var_dump($this->reapply_embargo_dsids);
         }
 
         $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='embargo-dsid-deny']/p:Condition/p:Apply/p:Apply/p:SubjectAttributeDesignator[@AttributeId='urn:fedora:names:fedora:2.1:subject:loginId']/parent::node()/p:Apply/p:AttributeValue");
@@ -504,7 +498,6 @@ class Embargoed_Policy
                     $this->reapply_embargo_users[] = $node->textContent;
                 }
             }
-            var_dump($this->reapply_embargo_users);
         }
         return true;
     }
