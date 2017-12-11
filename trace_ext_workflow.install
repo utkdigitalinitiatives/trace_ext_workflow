@@ -69,6 +69,11 @@ function trace_ext_workflow_schema() {
         'type' => 'varchar',
         'mysql_type' => 'DATETIME',
       ),
+      'representative_body' => array(
+        'description' => 'Either T (Thesis), D (Dissertation) or NULL (Unknown)',
+        'type' => 'varchar',
+        'length' => 1,
+      ),
     ),
     'unique keys' => array(
       'unique_pid_key' => array('pid'),
@@ -116,6 +121,25 @@ function trace_ext_workflow_update_7002() {
     ),
   );
 
+  foreach ($fields as $key => $field)  {
+    if (!db_field_exists($table, $key)) {
+      db_add_field($table, $key, $field);
+    }
+  }
+  db_query("DELETE FROM {cache};");
+}
+
+
+function trace_ext_workflow_update_7006() {
+  $table = 'trace_workflow_pids';
+
+  $fields = array(
+    'representative_body' => array(
+      'description' => 'Either T (Thesis), D (Dissertation) or NULL (Unknown)',
+      'type' => 'varchar',
+      'length' => 1,
+    ),
+  );
   foreach ($fields as $key => $field)  {
     if (!db_field_exists($table, $key)) {
       db_add_field($table, $key, $field);

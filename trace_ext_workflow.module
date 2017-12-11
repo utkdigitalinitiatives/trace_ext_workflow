@@ -31,10 +31,18 @@ function trace_ext_workflow_rules_object_policy_add($object)
 /**
  * Implimentation of hook_xml_form_builder_datastream_form_alter().
  */
-function trace_ext_workflow_form_xml_form_builder_datastream_form_alter(&$form, &$form_state, $form_id) {
+function trace_ext_workflow_form_xml_form_builder_datastream_form_alter(&$form, &$form_state, $form_id)
+{
   array_unshift($form['update']['#submit'], 'trace_ext_workflow_update_pending_approval');
 }
 
+/**
+ * Implimentation of hook_islandora_delete_object_form_alter().
+ */
+function trace_ext_workflow_form_islandora_delete_object_form_alter(array &$form, array &$form_state)
+{
+  array_unshift($form['#submit'], 'trace_ext_workflow_remove_submitted_record');
+}
 
 /**
  * Rules action callback; Confirm that the label of the DS does change during an update
@@ -98,8 +106,10 @@ function trace_ext_workflow_simple_workflow_extend_batch_alter(&$target_object)
  */
 function trace_ext_workflow_form_alter(&$form, &$form_state, $form_id)
 {
-  if ($form_id == 'islandora_datastream_version_replace_form') {
-      if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit']))) {
+  if ($form_id == 'islandora_datastream_version_replace_form')
+  {
+      if (((isset($form['#submit'])) && in_array('islandora_datastream_version_replace_form_submit', $form['#submit'])))
+      {
           $form['#submit'] = array();
           $form['#submit'][] = 'trace_ext_workflow_islandora_datastream_version_replace_form_submit';
       }
@@ -158,12 +168,32 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
 
 function trace_ext_workflow_update_pending_approval(&$form, &$form_state)
 {
-if (isset($form_state['input']['titleInfo']['title'])){
+
+if(isset($form_state['input']['extension']['degree']['level'])){
+  $representative_body = $form_state['input']['extension']['degree']['level'];
+  switch($representative_body)
+  {
+      case ("Masters (pre-doctoral)"):
+        $representative_body_status = 'E';
+        break;
+
+      case ("Doctoral (includes post-doctoral)"):
+        $representative_body_status = 'D';
+        break;
+
+      default:
+        $representative_body_status = 'U';
+        break;
+  }
+}
+
+if (isset($form_state['input']['titleInfo']['title']) && isset($form_state['object_id'])){
   try {
       db_update('trace_workflow_pids')
       ->fields(array(
         'label' => $form_state['input']['titleInfo']['title'],
         'datastream' => date('Y-m-d H:i:s'),
+        'representative_body' => $representative_body_status,
       ))
         ->condition('pid', $form_state['pid'])
         ->execute();
@@ -171,7 +201,8 @@ if (isset($form_state['input']['titleInfo']['title'])){
       \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
       \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
   }
-} else {
+} elseif (isset($form_state['object_id']))
+{
     try {
         db_update('trace_workflow_pids')
         ->fields(array(
@@ -185,4 +216,23 @@ if (isset($form_state['input']['titleInfo']['title'])){
     }
   }
 
+}
+
+/*
+ * Y
+ */
+function trace_ext_workflow_remove_submitted_record($form, $form_state)
+{
+  module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+  module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_menu');
+  module_load_include('inc', 'islandora', 'includes/utilities');
+
+  try {
+      db_delete('trace_workflow_pids')
+        ->condition('pid', $form_state['object']->id)
+        ->execute();
+  } catch (Exception $e) {
+      \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
+      \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
+  }
 }
