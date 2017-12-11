@@ -33,6 +33,7 @@ function trace_ext_workflow_rules_object_policy_add($object)
  */
 function trace_ext_workflow_form_xml_form_builder_datastream_form_alter(&$form, &$form_state, $form_id)
 {
+
   array_unshift($form['update']['#submit'], 'trace_ext_workflow_update_pending_approval');
 }
 
@@ -168,7 +169,6 @@ function trace_ext_workflow_islandora_datastream_version_replace_form_submit($fo
 
 function trace_ext_workflow_update_pending_approval(&$form, &$form_state)
 {
-
 if(isset($form_state['input']['extension']['degree']['level'])){
   $representative_body = $form_state['input']['extension']['degree']['level'];
   switch($representative_body)
@@ -187,7 +187,7 @@ if(isset($form_state['input']['extension']['degree']['level'])){
   }
 }
 
-if (isset($form_state['input']['titleInfo']['title']) && isset($form_state['object_id'])){
+if (isset($form_state['input']['titleInfo']['title']) && isset($form_state['pid'])){
   try {
       db_update('trace_workflow_pids')
       ->fields(array(
