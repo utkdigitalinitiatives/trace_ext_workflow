@@ -274,7 +274,7 @@ function trace_ext_workflow_insert_submitted_record($object)
 
   if ( strpos($xml, '<etd:level>Masters (pre-doctoral)</etd:level>') !== false )
   {
-      $representative_body_status = 'E';
+      $representative_body_status = 'T';
   }
 
   dsm($xml);
