@@ -41,5 +41,16 @@ function trace_ext_workflow_rules_action_info()
             ),
         ),
     );
+    $rules['trace_ext_workflow_remove_submitted_record'] = array(
+        'label' => t('Remove a submission when it is deleted from Islandora.'),
+        'group' => t('TRACE'),
+        'parameter' => array(
+            'object' => array(
+                'type' => 'islandora_object',
+                'label' => t('Object'),
+                'description' => t('A Tuque object for the Fedora object on which to add the datastream, as an entity.'),
+            ),
+        ),
+    );
     return $rules;
 }
