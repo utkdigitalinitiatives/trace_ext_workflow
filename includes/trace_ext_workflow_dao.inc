@@ -416,7 +416,7 @@ function trace_ext_workflow_accept_policy($target_object) {
     try {
         $embargoed_policy = new Embargoed_Policy($target_object);
     } catch (Exception $exception) {
-        watchdog('trace_ext_workflow', 'trace_ext_workflow_retrieve_published_policy_xml cannot parse policies for  %p.', array('%p' => $target_pid), WATCHDOG_ERROR);
+        watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_policy cannot parse policies for  %p.', array('%p' => $target_pid), WATCHDOG_ERROR);
         $embargoed_policy = null;
     }
 
@@ -457,7 +457,8 @@ class Embargoed_Policy
     public function __construct($target_object)
     {
         module_load_include('inc', 'islandora_scholar_embargo', 'includes/embargo_xacml_policy');
-        if (($target_object instanceof AbstractObject) && isset($target_object["RELS-INT"]) && isset($target_object["POLICY"])) {
+
+        if (($target_object instanceof AbstractObject) && isset($target_object["POLICY"])) {
             $this->pid = $target_object->id;
             // likely there is an embargo here, so the policy should be checked for the embargo rule (dsids and userids will need to be grabbed and reapplied.
             $xacml_xml = $target_object['POLICY']->content;
@@ -474,6 +475,11 @@ class Embargoed_Policy
     {
         if ((count($this->reapply_embargo_users) > 0)) {
             return true;
+        }
+        $domNodeList = $this->xpath->query("/p:Policy/p:Rule[@RuleId='embargo-dsid-deny']");
+
+        if ($domNodeList->length == 0) {
+            return false;
         }
 
         // the dsids list may be empty if the entire object is being embargoed
