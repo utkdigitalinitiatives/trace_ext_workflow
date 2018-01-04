@@ -6,7 +6,7 @@ function trace_ext_workflow_select_submitted_records()
     // of 's' or submitted
 
     $query = db_select('trace_workflow_pids', 'w')
-        ->fields('w', array('pid', 'label', 'user', 'modified_date'))
+        ->fields('w', array('pid', 'label', 'user', 'representative_body', 'modified_date'))
         ->condition('w.state', 's')
         ->orderBy('modified_date', 'DESC')
         ->execute();
@@ -264,6 +264,21 @@ function trace_ext_workflow_update_policy_datastream($object, $policy_xml)
  */
 function trace_ext_workflow_insert_submitted_record($object)
 {
+  $xml = $object['MODS']->content;
+  $representative_body_status = 'U';
+
+  if ( strpos($xml, '<etd:level>Doctoral (includes post-doctoral)</etd:level>') !== false )
+  {
+      $representative_body_status = 'D';
+  }
+
+  if ( strpos($xml, '<etd:level>Masters (pre-doctoral)</etd:level>') !== false )
+  {
+      $representative_body_status = 'T';
+  }
+
+  dsm($xml);
+
     try {
         global $user;
         $nid = db_insert('trace_workflow_pids')->fields(array(
@@ -272,6 +287,7 @@ function trace_ext_workflow_insert_submitted_record($object)
             'state' => 's',
             'user' => $user->name,
             'datastream' => date('Y-m-d H:i:s'),
+            'representative_body' => $representative_body_status,
         ))->execute();
     } catch (Exception $e) {
         \drupal_set_message(t('Error inserting submitted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
