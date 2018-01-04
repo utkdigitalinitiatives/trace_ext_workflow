@@ -308,8 +308,8 @@ function trace_ext_workflow_remove_submitted_record($form, $form_state)
                     ->condition('pid', $form_state['object']->id)
                     ->execute();
             } catch (Exception $e) {
-                \drupal_set_message(t('Error removing from accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $obj_pid, '%e' => $e->getMessage())), 'error');
-                \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $obj_pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+                \drupal_set_message(t('Error removing from accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object']->id, '%e' => $e->getMessage())), 'error');
+                \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object']->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
             }
         }
     }
@@ -319,8 +319,8 @@ function trace_ext_workflow_remove_submitted_record($form, $form_state)
                 ->condition('pid', $form_state['pid']['#value'])
                 ->execute();
         } catch (Exception $e) {
-            \drupal_set_message(t('Error removing from accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $obj_pid, '%e' => $e->getMessage())), 'error');
-            \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $obj_pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+            \drupal_set_message(t('Error removing from accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object']->id, '%e' => $e->getMessage())), 'error');
+            \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object']->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
         }
     }
 }
