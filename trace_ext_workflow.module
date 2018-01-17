@@ -229,6 +229,7 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
 {
 
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
+    module_load_include('inc', 'islandora_batch_digital_commons', 'includes/islandora_scan_batch_digital_commons');
     if ($is_object_state_done) {
         if ($is_object_state_done) {
             $key = IslandoraScanBatchObjectDigitalCommons::$BATCH_OBJECT_PREFIX . $ingest_object->id;

@@ -4,5 +4,7 @@ package = Trace Tools
 version = 7.x-dev
 core = 7.x
 dependencies[] = islandora
+dependencies[] = islandora_batch
+dependencies[] = islandora_batch_digital_commons
 files[] = includes/trace_ext_workflow_dao.inc
 files[] = includes/trace_ext_workflow_menu.inc
