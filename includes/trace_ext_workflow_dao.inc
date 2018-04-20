@@ -1,5 +1,20 @@
 <?php
 
+
+
+function is_pid_in_extended_namespace($pid)
+{
+    $trace_ext_workflow_dao_namespaces = array("utk.ir.td");
+    $result = false;
+    foreach ($trace_ext_workflow_dao_namespaces as $prefix) {
+
+        if (substr($pid, 0, strlen($prefix)) === $prefix) {
+            $result = true;
+            break;
+        }
+    }
+    return $result;
+}
 function trace_ext_workflow_select_submitted_records()
 {
     // get the pids from the database table that are still in a state
@@ -149,6 +164,9 @@ function trace_ext_workflow_object_policy_add($object)
     //
     trace_ext_workflow_insert_submitted_record($object);
     $policy_xml = trace_ext_workflow_retrieve_namespace_submitted_policy($namespace);
+    if (! $policy_xml) {
+        $policy_xml =trace_ext_workflow_default_policy_file();
+    }
     if ($policy_xml) {
         // get the policy from the database that corresponds to the namespace
         // add the policy to the object
@@ -157,7 +175,26 @@ function trace_ext_workflow_object_policy_add($object)
         return NULL;
     }
 }
+function trace_ext_workflow_default_policy_file() {
 
+    $includes_module_directory = dirname(__FILE__);
+    $top_module_directory = dirname($includes_module_directory);
+    $default_policy_filepath = $top_module_directory . DIRECTORY_SEPARATOR .  "xml" . DIRECTORY_SEPARATOR .  "default_object_policy.xml"; // XXX magic string
+    if (file_exists($default_policy_filepath) ) {
+        $policy_xml =file_get_contents($default_policy_filepath);
+        if ($policy_xml)                                            {
+            return $policy_xml;
+        } else {
+            $exception = $this->getFormattedException("Unable to find the default policy file.", __LINE__);
+            throw $exception;
+        }
+    } else {
+        $exception = $this->getFormattedException("Unable to find the scripts directory.", __LINE__);
+        throw $exception;
+    }
+
+
+}
 /**
  * Y
  * Rules action callback; set a POLiCY datastream on an object and return.
@@ -198,7 +235,6 @@ function trace_ext_workflow_retrieve_namespace_submitted_policy($namespace)
         $result = $query->fetchObject();
         return $result->submitted_policy;
     } else {
-        watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_INFO);
         return FALSE;
     }
 }
@@ -222,13 +258,12 @@ function trace_ext_workflow_retrieve_namespace_accepted_policy($namespace)
         $result = $query->fetchObject();
         return $result->accepted_policy;
     } else {
-        watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_ERROR);
         return FALSE;
     }
 }
 
 /*
- * Y
+ * Ingest a Datastream that does not entail executing all the triggers associated with ingesting datastreams????
  */
 function trace_ext_workflow_add_policy_datastream($object, $policy_xml)
 {
@@ -264,34 +299,33 @@ function trace_ext_workflow_update_policy_datastream($object, $policy_xml)
  */
 function trace_ext_workflow_insert_submitted_record($object)
 {
-  $xml = $object['MODS']->content;
-  $representative_body_status = 'U';
+     if (is_pid_in_extended_namespace($object->id) ){
+        $xml = $object['MODS']->content;
+        $representative_body_status = 'U';
 
-  if ( strpos($xml, '<etd:level>Doctoral (includes post-doctoral)</etd:level>') !== false )
-  {
-      $representative_body_status = 'D';
-  }
+        if (strpos($xml, '<etd:level>Doctoral (includes post-doctoral)</etd:level>') !== false) {
+            $representative_body_status = 'D';
+        }
 
-  if ( strpos($xml, '<etd:level>Masters (pre-doctoral)</etd:level>') !== false )
-  {
-      $representative_body_status = 'T';
-  }
+        if (strpos($xml, '<etd:level>Masters (pre-doctoral)</etd:level>') !== false) {
+            $representative_body_status = 'T';
+        }
 
-  dsm($xml);
 
-    try {
-        global $user;
-        $nid = db_insert('trace_workflow_pids')->fields(array(
-            'pid' => $object->id,
-            'label' => $object->label,
-            'state' => 's',
-            'user' => $user->name,
-            'datastream' => date('Y-m-d H:i:s'),
-            'representative_body' => $representative_body_status,
-        ))->execute();
-    } catch (Exception $e) {
-        \drupal_set_message(t('Error inserting submitted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
-        \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+        try {
+            global $user;
+            $nid = db_insert('trace_workflow_pids')->fields(array(
+                'pid' => $object->id,
+                'label' => $object->label,
+                'state' => 's',
+                'user' => $user->name,
+                'datastream' => date('Y-m-d H:i:s'),
+                'representative_body' => $representative_body_status,
+            ))->execute();
+        } catch (Exception $e) {
+            \drupal_set_message(t('Error inserting submitted into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage())), 'error');
+            \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $object->id, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+        }
     }
 }
 
@@ -300,17 +334,19 @@ function trace_ext_workflow_insert_submitted_record($object)
  */
 function trace_ext_workflow_update_accepted_record($pid)
 {
-    try {
-        $num_updated = db_update('trace_workflow_pids')// Table name no longer needs {}
-        ->fields(array(
-            'state' => 'a',
-            'datastream' => date('Y-m-d H:i:s'),
-        ))
-            ->condition('pid', $pid)
-            ->execute();
-    } catch (Exception $e) {
-        \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
-        \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+    if (is_pid_in_extended_namespace($pid) ) {
+        try {
+            $num_updated = db_update('trace_workflow_pids')// Table name no longer needs {}
+            ->fields(array(
+                'state' => 'a',
+                'datastream' => date('Y-m-d H:i:s'),
+            ))
+                ->condition('pid', $pid)
+                ->execute();
+        } catch (Exception $e) {
+            \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
+            \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+        }
     }
 }
 /*
@@ -318,13 +354,15 @@ function trace_ext_workflow_update_accepted_record($pid)
  */
 function trace_ext_workflow_delete_record_from_workflow($pid)
 {
-    try {
-        db_delete('trace_workflow_pids')// Table name no longer needs {}
+    if (is_pid_in_extended_namespace($pid) ) {
+        try {
+            db_delete('trace_workflow_pids')// Table name no longer needs {}
             ->condition('pid', $pid)
-            ->execute();
-    } catch (Exception $e) {
-        \drupal_set_message(t('Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
-        \watchdog('trace_ext_workflow', 'Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+                ->execute();
+        } catch (Exception $e) {
+            \drupal_set_message(t('Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage())), 'error');
+            \watchdog('trace_ext_workflow', 'Error deleting record in trace_worflow_pids table for pid %p : %e.', array('%p' => $pid, '%e' => $e->getMessage()), WATCHDOG_ERROR);
+        }
     }
 }
 /*
@@ -332,17 +370,19 @@ function trace_ext_workflow_delete_record_from_workflow($pid)
  */
 function is_trace_workflow_object_accepted($pid)
 {
-    $db_and = db_and();
-    $db_and->condition('w.state', 'a');
-    $db_and->condition('w.pid', $pid);
-    $query = db_select('trace_workflow_pids', 'w')
-        ->fields('w', array('pid'))
-        ->condition($db_and)
-        ->execute();
+    if (is_pid_in_extended_namespace($pid) ) {
+        $db_and = db_and();
+        $db_and->condition('w.state', 'a');
+        $db_and->condition('w.pid', $pid);
+        $query = db_select('trace_workflow_pids', 'w')
+            ->fields('w', array('pid'))
+            ->condition($db_and)
+            ->execute();
 
-    $num = $query->rowCount();
-    if ($num > 0) {
-        return TRUE;
+        $num = $query->rowCount();
+        if ($num > 0) {
+            return TRUE;
+        }
     }
     return FALSE;
 
@@ -396,7 +436,6 @@ function trace_ext_workflow_retrieve_namespace_published_policy($namespace)
         $result = $query->fetchObject();
         return $result->published_policy;
     } else {
-        watchdog('islandora_simple_workflow', 'islandora_simple_workflow_retrieve_namespace_published_policy does not have policies for  %p.', array('%p' => $namespace), WATCHDOG_ERROR);
         return FALSE;
     }
 }
@@ -414,7 +453,6 @@ function trace_ext_workflow_retrieve_published_policy_xml($object) {
         try {
             $embargoed_policy = new Embargoed_Policy($object);
         } catch (Exception $exception) {
-            watchdog('trace_ext_workflow', 'trace_ext_workflow_retrieve_published_policy_xml cannot parse policies for  %p.', array('%p' => $pid), WATCHDOG_ERROR);
             $embargoed_policy = null;
         }
         if (isset($embargoed_policy) && $embargoed_policy->isPolicyEmbargoed()) {
@@ -432,13 +470,13 @@ function trace_ext_workflow_accept_policy($target_object) {
     try {
         $embargoed_policy = new Embargoed_Policy($target_object);
     } catch (Exception $exception) {
-        watchdog('trace_ext_workflow', 'trace_ext_workflow_accept_policy cannot parse policies for  %p.', array('%p' => $target_pid), WATCHDOG_ERROR);
         $embargoed_policy = null;
     }
 
-    $namespace = islandora_get_namespace($target_pid);
-    $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
+
     if (isset($embargoed_policy) && $embargoed_policy->isPolicyEmbargoed()) {
+        $namespace = islandora_get_namespace($target_pid);
+        $policy_xml = trace_ext_workflow_retrieve_namespace_accepted_policy($namespace);
         $policy_xml = $embargoed_policy->transformWithEmbargo($policy_xml);
 
     }
@@ -452,7 +490,10 @@ function trace_ext_workflow_accept_policy($target_object) {
 function trace_ext_workflow_object_update($object)
 {
     // add the policy to the object
-    $object['POLICY']->content = trace_ext_workflow_retrieve_published_policy_xml($object);
+    $policy = trace_ext_workflow_retrieve_published_policy_xml($object);
+    if ($policy) {
+        $object['POLICY']->content = $policy;
+    }
 
 }
 
