@@ -194,34 +194,33 @@ function trace_ext_workflow_update_pending_approval(&$form, &$form_state)
                 break;
         }
     }
-if (isset($form_state['input']['titleInfo']['title'])){
-  try {
-      db_update('trace_workflow_pids')
-      ->fields(array(
-        'label' => $form_state['input']['titleInfo']['title'],
-        'datastream' => date('Y-m-d H:i:s'),
-        'representative_body' => $representative_body_status,
-      ))
-        ->condition('pid', $form_state['pid'])
-        ->execute();
-  } catch (Exception $e) {
-      \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
-      \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
-  }
-} elseif (isset($form_state['object_id']))
-{
-    try {
-        db_update('trace_workflow_pids')
-        ->fields(array(
-          'datastream' => date('Y-m-d H:i:s'),
-        ))
-          ->condition('pid', $form_state['object_id'])
-          ->execute();
-    } catch (Exception $e) {
-        \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
-        \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
-    }
-  }
+    if (isset($form_state['input']['titleInfo']['title'])){
+      try {
+          db_update('trace_workflow_pids')
+          ->fields(array(
+            'label' => $form_state['input']['titleInfo']['title'],
+            'datastream' => date('Y-m-d H:i:s'),
+            'representative_body' => $representative_body_status,
+          ))
+            ->condition('pid', $form_state['pid'])
+            ->execute();
+      } catch (Exception $e) {
+          \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
+          \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
+      }
+    } elseif (isset($form_state['object_id'])) {
+        try {
+            db_update('trace_workflow_pids')
+            ->fields(array(
+              'datastream' => date('Y-m-d H:i:s'),
+            ))
+              ->condition('pid', $form_state['object_id'])
+              ->execute();
+        } catch (Exception $e) {
+            \drupal_set_message(t('Error updating accepted in trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage())), 'error');
+            \watchdog('trace_ext_workflow', 'Error inserting into trace_worflow_pids table for pid %p : %e.', array('%p' => $form_state['object_id'], '%e' => $e->getMessage()), WATCHDOG_ERROR);
+        }
+      }
 
 }
 
@@ -229,14 +228,14 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
 {
 
     module_load_include('inc', 'trace_ext_workflow', 'includes/trace_ext_workflow_dao');
-    module_load_include('inc', 'islandora_batch_digital_commons', 'includes/islandora_scan_batch_digital_commons');
+    module_load_include('php', 'islandora_batch_digital_commons', 'includes/DigitalCommonsScanBatchObject');
     if ($is_object_state_done) {
         if ($is_object_state_done) {
-            $key = IslandoraScanBatchObjectDigitalCommons::$BATCH_OBJECT_PREFIX . $ingest_object->id;
+            $key = DigitalCommonsScanBatchObject::$BATCH_OBJECT_PREFIX . $ingest_object->id;
             $cached_object = cache_get($key, 'cache_field');
             $islandoraScanBatchObjectDigitalCommons = $cached_object->data;
 
-            if (isset($islandoraScanBatchObjectDigitalCommons) && is_a($islandoraScanBatchObjectDigitalCommons, 'IslandoraScanBatchObjectDigitalCommons')) {
+            if (isset($islandoraScanBatchObjectDigitalCommons) && is_a($islandoraScanBatchObjectDigitalCommons, 'DigitalCommonsScanBatchObject')) {
                 # determine if the object needs to be embargoed or withdrawn
 
                 $object_info = $islandoraScanBatchObjectDigitalCommons->getObjectInfo();
@@ -253,40 +252,44 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
                     if ($digital_commons_metadata_published_timestamp <= time()) {
 
                         $policy_xml = trace_ext_workflow_retrieve_published_policy_xml($ingest_object);
-                        $modifyDatastreamArgs = array('dsString' => $policy_xml);
-                        try {
-                            $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
-                        } catch (Exception $exception) {
-                            echo $exception->getCode() . " : " . $exception->getMessage() . "\n";
-                            watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                        if (isset($policy_xml)) {
+                            $modifyDatastreamArgs = array('dsString' => $policy_xml);
+                            try {
+                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
+                            } catch (Exception $exception) {
+
+                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                            }
+                            $modifyObjectArgs = array('state' => 'A');
+                            try {
+                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
+                            } catch (Exception $exception) {
+
+                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify object published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                            }
+                            //remove record from database
+                            trace_ext_workflow_delete_record_from_workflow($islandoraScanBatchObjectDigitalCommons->id);
                         }
-                        $modifyObjectArgs = array('state' => 'A');
-                        try {
-                            $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
-                        } catch (Exception $exception) {
-                            echo $exception->getCode() . " : " . $exception->getMessage() . "\n";
-                            watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify object published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
-                        }
-                        //remove record from database
-                        trace_ext_workflow_delete_record_from_workflow($islandoraScanBatchObjectDigitalCommons->id);
                     } else {
 
                         $policy_xml = trace_ext_workflow_accept_policy($ingest_object);
-                        $modifyDatastreamArgs = array('dsString' => $policy_xml);
-                        try {
-                            $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
-                        } catch (Exception $exception) {
-                            echo $exception->getCode() . " : " . $exception->getMessage() . "\n";
-                            watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams accepted policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                        if (isset($policy_xml)) {
+                            $modifyDatastreamArgs = array('dsString' => $policy_xml);
+                            try {
+                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
+                            } catch (Exception $exception) {
+
+                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams accepted policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                            }
+                            $modifyObjectArgs = array('state' => 'I');
+                            try {
+                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
+                            } catch (Exception $exception) {
+
+                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify object accepted policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+                            }
+                            trace_ext_workflow_update_accepted_record($islandoraScanBatchObjectDigitalCommons->id);
                         }
-                        $modifyObjectArgs = array('state' => 'I');
-                        try {
-                        $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
-                        } catch (Exception $exception) {
-                            echo $exception->getCode() . " : " . $exception->getMessage() . "\n";
-                            watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify object accepted policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
-                        }
-                        trace_ext_workflow_update_accepted_record($islandoraScanBatchObjectDigitalCommons->id);
                     }
 
                 }
