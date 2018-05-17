@@ -8,7 +8,7 @@ function is_pid_in_extended_namespace($pid)
     $result = false;
     foreach ($trace_ext_workflow_dao_namespaces as $prefix) {
 
-        if (substr($pid, 0, strlen($prefix)+1) === $prefix) {
+        if (substr($pid, 0, strlen($prefix)) === $prefix) {
             $result = true;
             break;
         }
