@@ -239,7 +239,6 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
                 # determine if the object needs to be embargoed or withdrawn
 
                 $object_info = $islandoraScanBatchObjectDigitalCommons->getObjectInfo();
-                $is_object_withdrawn = false;
                 $digital_commons_metadata_xml = $object_info->getDigitalCommonsMetadata();
                 $digital_commons_metadata_domDocument = new DOMDocument();
                 $digital_commons_metadata_domDocument->loadXML($digital_commons_metadata_xml);
@@ -253,15 +252,10 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
 
                         $policy_xml = trace_ext_workflow_retrieve_published_policy_xml($ingest_object);
                         if (isset($policy_xml)) {
-                            $modifyDatastreamArgs = array('dsString' => $policy_xml);
-                            try {
-                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
-                            } catch (Exception $exception) {
+                            trace_ext_workflow_add_or_update_policy_datastream($islandoraScanBatchObjectDigitalCommons, $policy_xml);
 
-                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
-                            }
-                            $modifyObjectArgs = array('state' => 'A');
                             try {
+                                $modifyObjectArgs = array('state' => 'A');
                                 $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
                             } catch (Exception $exception) {
 
@@ -274,15 +268,11 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
 
                         $policy_xml = trace_ext_workflow_accept_policy($ingest_object);
                         if (isset($policy_xml)) {
-                            $modifyDatastreamArgs = array('dsString' => $policy_xml);
-                            try {
-                                $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
-                            } catch (Exception $exception) {
+                            trace_ext_workflow_add_or_update_policy_datastream($islandoraScanBatchObjectDigitalCommons, $policy_xml);
 
-                                watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams accepted policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
-                            }
-                            $modifyObjectArgs = array('state' => 'I');
+
                             try {
+                                $modifyObjectArgs = array('state' => 'I');
                                 $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyObject($islandoraScanBatchObjectDigitalCommons->id, $modifyObjectArgs);
                             } catch (Exception $exception) {
 
@@ -297,6 +287,7 @@ function trace_ext_workflow_islandora_batch_object_processed(AbstractObject $ing
         }
     }
 }
+
 /*
  * Y
  */

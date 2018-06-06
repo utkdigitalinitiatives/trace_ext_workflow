@@ -170,7 +170,7 @@ function trace_ext_workflow_object_policy_add($object)
     if ($policy_xml) {
         // get the policy from the database that corresponds to the namespace
         // add the policy to the object
-        return trace_ext_workflow_add_policy_datastream($object, $policy_xml);
+        return trace_ext_workflow_add_or_update_policy_datastream($object, $policy_xml);
     } else {
         return NULL;
     }
@@ -265,25 +265,49 @@ function trace_ext_workflow_retrieve_namespace_accepted_policy($namespace)
 /*
  * Ingest a Datastream that does not entail executing all the triggers associated with ingesting datastreams????
  */
-function trace_ext_workflow_add_policy_datastream($object, $policy_xml)
+function trace_ext_workflow_add_or_update_policy_datastream($object, $policy_xml)
 {
     $datastream = $object->getDatastream('POLICY');
     if (empty($datastream)) {
-        $datastream = $object->constructDatastream('POLICY', 'm');
-        $datastream->mimetype = 'application/xml';
-        $datastream->label = 'Policy';
 
-        $datastream->state = 'A';
-        $datastream->content = $policy_xml;
+        $params = array('dsLabel' => 'POLICY', 'dsState' => 'A', 'dsMIME' => 'application/xml', 'dsControlGroup' => 'M', 'dsVersionable' => true);
 
-        if (!$object->ingestDatastream($datastream)) {
+        if (!$object->repository->api->m->addDatastream($object->id, 'POLICY', 'string', $policy_xml, $params)) {
             watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies did not ingest the policy for %p.', array('%p' => $object->id), WATCHDOG_ERROR);
         }
     } else {
-        watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies already has a policy for %p.', array('%p' => $datastream->id), WATCHDOG_INFO);
+
+        if (strcmp($datastream->content, $policy_xml) != 0) {
+            $modifyDatastreamArgs = array('dsString' => $policy_xml);
+            $object->repository->api->m->modifyDatastream($object->id, 'POLICY', $modifyDatastreamArgs);
+        } else {
+            watchdog('trace_ext_workflow', 'trace_workflow_namespace_policies already has a policy for %p.', array('%p' => $datastream->id), WATCHDOG_INFO);
+        }
     }
     return $datastream;
 }
+
+function trace_ext_workflow_create_or_update_policy($islandoraScanBatchObjectDigitalCommons, $ingest_object, $policy_xml) {
+    try {
+        $dsName = 'POLICY';
+        $dsType = 'x';
+        $dsMimetype = 'application/xml';
+        $dsLabel = 'POLICY';
+        $modifyDatastreamArgs = array('dsString' => $policy_xml);
+        if (isset($ingest_object['POLICY'])) {
+            $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
+
+        } else {
+            $params = array('dsLabel' => 'POLICY', 'dsState' => 'A', 'dsMIME' => 'application/xml', 'dsControlGroup' => 'M', 'dsVersionable' => true);
+
+            $islandoraScanBatchObjectDigitalCommons->repository->api->m->addDatastream($ingest_object->id, 'POLICY', 'string', $policy_xml, $params);
+        }
+    } catch (Exception $exception) {
+
+        watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
+    }
+}
+
 
 /*
  * Y
@@ -293,7 +317,7 @@ function trace_ext_workflow_update_policy_datastream($object, $policy_xml)
     $object['POLICY']->content = $policy_xml;
 
 }
-
+     
 /*
  * Y
  */
