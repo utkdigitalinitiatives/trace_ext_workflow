@@ -287,28 +287,6 @@ function trace_ext_workflow_add_or_update_policy_datastream($object, $policy_xml
     return $datastream;
 }
 
-function trace_ext_workflow_create_or_update_policy($islandoraScanBatchObjectDigitalCommons, $ingest_object, $policy_xml) {
-    try {
-        $dsName = 'POLICY';
-        $dsType = 'x';
-        $dsMimetype = 'application/xml';
-        $dsLabel = 'POLICY';
-        $modifyDatastreamArgs = array('dsString' => $policy_xml);
-        if (isset($ingest_object['POLICY'])) {
-            $islandoraScanBatchObjectDigitalCommons->repository->api->m->modifyDatastream($islandoraScanBatchObjectDigitalCommons->id, 'POLICY', $modifyDatastreamArgs);
-
-        } else {
-            $params = array('dsLabel' => 'POLICY', 'dsState' => 'A', 'dsMIME' => 'application/xml', 'dsControlGroup' => 'M', 'dsVersionable' => true);
-
-            $islandoraScanBatchObjectDigitalCommons->repository->api->m->addDatastream($ingest_object->id, 'POLICY', 'string', $policy_xml, $params);
-        }
-    } catch (Exception $exception) {
-
-        watchdog('trace_ext_workflow', 'trace_ext_workflow_islandora_batch_object_processed cannot modify datastreams published policies for  %p.', array('%p' => $ingest_object->id), WATCHDOG_ERROR);
-    }
-}
-
-
 /*
  * Y
  */
